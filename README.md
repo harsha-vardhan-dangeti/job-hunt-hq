@@ -41,7 +41,8 @@ supabase db push
 | Variable | Value |
 | --- | --- |
 | `AGENT_TOKEN` | a long random string — `openssl rand -hex 24` |
-| `APP_PASSWORD` | the password you'll type to open the site |
+| `ALLOWED_EMAILS` | the Google account(s) allowed to sign in |
+| `APP_PASSWORD` | optional password fallback; remove once Google sign-in works |
 
 Redeploy so they take effect.
 
@@ -55,14 +56,33 @@ curl -X POST https://<your-app>.vercel.app/api/seed \
 It replies `{"imported":74}`. Re-running it is safe — existing rows are left alone and it
 replies with how many new rows it added (`0`).
 
-**7. Open the site**, type your `APP_PASSWORD`, and the tracker is live.
+**7. Open the site** and sign in (see *Signing in* below).
 
-### Keeping it private
+### Signing in
 
-`APP_PASSWORD` is a single shared password, good enough for a personal tracker nobody is
-targeting. For a second lock, turn on Vercel Authentication (Settings → Deployment
-Protection), which requires your Vercel login before the site loads at all. The API routes
-stay reachable by the agent because they authenticate with a bearer token, not a cookie.
+Sign in with Google, from any device. Only the accounts in `ALLOWED_EMAILS` get in; anyone
+else is signed straight back out. Supabase Auth handles the Google sign-in, and the app only
+reads the verified email from the session.
+
+One-time setup:
+
+1. **Google Cloud Console** → APIs & Services → Credentials → Create credentials → OAuth
+   client ID → *Web application*.
+   - Authorized JavaScript origins: `https://<your-app>.vercel.app`
+   - Authorized redirect URI: `https://<project-ref>.supabase.co/auth/v1/callback`
+
+   On the OAuth consent screen, leave the app in *Testing* and add your Gmail as a test user:
+   Google then refuses everyone else before they reach the app.
+2. **Supabase** → Authentication → Sign In / Providers → Google: turn it on, paste the client
+   ID and secret, save.
+3. **Supabase** → Authentication → URL Configuration: Site URL `https://<your-app>.vercel.app`;
+   add `https://<your-app>.vercel.app/**` (and `http://localhost:3000/**` for local work) to
+   Redirect URLs.
+4. Set `ALLOWED_EMAILS` in Vercel and redeploy.
+
+Once Google sign-in works, delete `APP_PASSWORD` from Vercel to turn the password off, and in
+Supabase turn off *Allow new users to sign up* so no one else can even create an account.
+The API routes stay reachable by the agent, which uses its bearer token.
 
 ---
 
@@ -184,7 +204,8 @@ app/
   page.jsx              server component — loads rows, brief and activity
   layout.jsx            fonts and shell
   globals.css           the whole design system, tokens first
-  login/page.jsx        password gate
+  login/page.jsx        sign-in page (Google, optional password)
+  auth/callback/route.js  finishes Google sign-in, checks the allow-list
   api/jobs/route.js     list + create
   api/jobs/[id]/route.js  update + delete
   api/brief/route.js    read + replace the brief
@@ -202,7 +223,9 @@ components/
 lib/supabase.js         server-only Supabase client (secret key)
 lib/db.js               data access and seed fallback
 lib/auth.js             bearer token and session checks
-proxy.js                redirects to /login when APP_PASSWORD is set
+lib/gate.js             who may sign in (ALLOWED_EMAILS, APP_PASSWORD)
+lib/session.js          Supabase Auth session for the current request
+proxy.js                refreshes the session, sends anyone signed out to /login
 seed/                   the exported snapshot
 supabase/migrations/    schema, RLS, event-log trigger, merge_job() and import_seed()
 ```

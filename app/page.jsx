@@ -1,6 +1,7 @@
 import Tracker from '../components/Tracker';
 import { listJobs, getBrief, listEvents, hasDb } from '../lib/db';
 import { agentReady } from '../lib/agent';
+import { gateConfigured } from '../lib/gate';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,7 +25,7 @@ export default async function Page() {
       readOnly={!hasDb}
       loadError={error}
       agentReady={agentReady}
-      gated={Boolean(process.env.APP_PASSWORD)}
+      gated={gateConfigured()}
     />
   );
 }
