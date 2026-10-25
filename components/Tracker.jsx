@@ -83,6 +83,13 @@ function isStale(j) {
   return j.status === 'wishlist' && !j.messagedOn && (daysAgo(j.addedOn) ?? 0) > 21;
 }
 
+/** Drop is one click from the queue, so check first. */
+function confirmDrop(j) {
+  return window.confirm(
+    `Drop ${j.company}${j.role ? ` – ${j.role}` : ''}?\n\nIt leaves Today and your open list. You can undo right after, or set the status back later.`
+  );
+}
+
 const isSnoozed = (j) => Boolean(j.snoozedUntil && j.snoozedUntil > today());
 /** The deadline has already gone by: nothing to do today, only a decision. */
 const deadlinePassed = (j) => !CLOSED.has(j.status) && Boolean(j.deadline && j.deadline < today());
@@ -659,7 +666,7 @@ function QueueCard({ item, act, openRow, readOnly }) {
           <button
             className="ghost danger"
             disabled={busy || readOnly}
-            onClick={() => run({ status: 'dropped' }, `Dropped ${j.company}`)}
+            onClick={() => confirmDrop(j) && run({ status: 'dropped' }, `Dropped ${j.company}`)}
           >
             Drop
           </button>
@@ -745,7 +752,7 @@ function DecideCard({ jobs, act, readOnly }) {
               <button
                 className="ghost danger"
                 disabled={readOnly}
-                onClick={() => act(j, { status: 'dropped' }, `Dropped ${j.company}`)}
+                onClick={() => confirmDrop(j) && act(j, { status: 'dropped' }, `Dropped ${j.company}`)}
               >
                 Drop
               </button>
