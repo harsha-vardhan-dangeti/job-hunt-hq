@@ -1,9 +1,10 @@
 import { getBrief, putBrief, hasDb } from '../../../lib/db';
-import { canWrite, unauthorized } from '../../../lib/auth';
+import { canRead, canWrite, unauthorized } from '../../../lib/auth';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(request) {
+  if (!(await canRead(request))) return unauthorized();
   try {
     return Response.json({ brief: await getBrief(), readOnly: !hasDb });
   } catch (err) {

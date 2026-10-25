@@ -83,10 +83,23 @@ for checking the UI, useless for tracking anything.
 
 ---
 
+## What's on the page
+
+- **Today** — up to five things to do now: interviews and live deadlines first, then follow-ups
+  that have come due, roles you pinned, and fit-4+ roles with a draft but no message sent.
+  "Mark sent" sets `messagedOn`, moves the row to `outreach` and books a follow-up in 5 days.
+  Every one-click action has an Undo.
+- **Decide or drop** — rows whose deadline has passed, and wishlist rows untouched for 10+ days.
+  Do now, snooze 3 days, or drop.
+- **Insights** — sent this week against the 12-a-week target, your daily streak, a 14-day chart of
+  messages sent and applications, and the funnel with its weakest step called out.
+
+---
+
 ## The API
 
-Writes need `Authorization: Bearer $AGENT_TOKEN` (or a signed-in browser session). Reads are
-behind the same password gate as the site.
+Every route, reads included, needs `Authorization: Bearer $AGENT_TOKEN` or a signed-in browser
+session. Without either it returns 401.
 
 | Method | Path | Does |
 | --- | --- | --- |
@@ -111,7 +124,10 @@ curl -X PATCH https://<app>.vercel.app/api/jobs/databricks-ai-engineer-fde \
 
 `company`, `role`, `jobId`, `url`, `status`, `fit` (1–5), `source`, `addedOn`, `postedOn`,
 `contact`, `contactUrl`, `messagedOn`, `followUpOn`, `deadline`, `interviewAt`, `draft`,
-`prepBrief`, `notes`.
+`prepBrief`, `notes`, `snoozedUntil`, `pinnedOn`.
+
+`snoozedUntil` hides a row from Today and Decide-or-drop until that date. `pinnedOn` is set by
+"Do now" and puts the row at the top of Today until a message is sent.
 
 `status` is one of `wishlist`, `outreach`, `applied`, `interviewing`, `offer`, `rejected`,
 `dropped`. Dates are `YYYY-MM-DD`; `interviewAt` is `YYYY-MM-DDTHH:MM` in IST.
