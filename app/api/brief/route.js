@@ -15,7 +15,7 @@ export async function PUT(request) {
   if (!(await canWrite(request))) return unauthorized();
   if (!hasDb) {
     return Response.json(
-      { error: 'No database configured. Set DATABASE_URL to enable writes.' },
+      { error: 'No database configured. Set SUPABASE_URL and SUPABASE_SECRET_KEY to enable writes.' },
       { status: 409 }
     );
   }

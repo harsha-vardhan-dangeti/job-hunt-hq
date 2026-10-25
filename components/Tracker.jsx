@@ -239,16 +239,17 @@ export default function Tracker({ initialJobs, initialBrief, events = [], readOn
 
       {loadError ? (
         <div className="banner bad">
-          Couldn&apos;t reach the database: {loadError}. Check <code>DATABASE_URL</code> in your Vercel
-          project settings.
+          Couldn&apos;t reach Supabase: {loadError}. Check <code>SUPABASE_URL</code> and{' '}
+          <code>SUPABASE_SECRET_KEY</code> in your Vercel project settings, and that the migration has
+          been pushed.
         </div>
       ) : null}
 
       {readOnly ? (
         <div className="banner warn">
-          Read-only: no database is connected, so this is the snapshot bundled with the deploy. Add a
-          Postgres database and set <code>DATABASE_URL</code>, then POST to <code>/api/seed</code> to
-          import these {jobs.length} rows and turn on editing.
+          Read-only: no database is connected, so this is the snapshot bundled with the deploy. Connect
+          Supabase (<code>SUPABASE_URL</code> and <code>SUPABASE_SECRET_KEY</code>), then POST to{' '}
+          <code>/api/seed</code> to import these {jobs.length} rows and turn on editing.
         </div>
       ) : null}
 

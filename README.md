@@ -1,7 +1,7 @@
 # Job Hunt HQ
 
 A private tracker for a Backend + AI / Forward Deployed Engineer job hunt. Next.js App
-Router, Postgres, no client-side framework beyond React. Built to run on Vercel's free tier
+Router, Supabase, no client-side framework beyond React. Built to run on Vercel's free tier
 and to be written to by a scheduled agent over a small REST API.
 
 Ships with a snapshot of 74 tracked roles in `seed/jobs.json`.
@@ -23,10 +23,20 @@ git push -u origin main
 **2. Import it on Vercel.** vercel.com → Add New → Project → pick the repo → Deploy.
 No build settings to change; Next.js is detected.
 
-**3. Add a database.** In the project: Storage → Create Database → Neon (Postgres).
-Vercel injects `DATABASE_URL` and `POSTGRES_URL` automatically. Redeploy after attaching.
+**3. Add Supabase.** In the project: Storage → Create Database → Supabase (or connect an
+existing Supabase project). Vercel injects `SUPABASE_URL` and `SUPABASE_SECRET_KEY`
+automatically. Redeploy after attaching.
 
-**4. Set the remaining environment variables.** Project → Settings → Environment Variables:
+**4. Create the tables.** Link the CLI to the project and push the migration in
+`supabase/migrations/`:
+
+```bash
+supabase login
+supabase link --project-ref <project-ref>
+supabase db push
+```
+
+**5. Set the remaining environment variables.** Project → Settings → Environment Variables:
 
 | Variable | Value |
 | --- | --- |
@@ -35,16 +45,17 @@ Vercel injects `DATABASE_URL` and `POSTGRES_URL` automatically. Redeploy after a
 
 Redeploy so they take effect.
 
-**5. Import the 74 rows.** Once:
+**6. Import the 74 rows.** Once:
 
 ```bash
 curl -X POST https://<your-app>.vercel.app/api/seed \
   -H "Authorization: Bearer $AGENT_TOKEN"
 ```
 
-It replies `{"imported":74}`. Re-running it is safe — existing rows are left alone.
+It replies `{"imported":74}`. Re-running it is safe — existing rows are left alone and it
+replies with how many new rows it added (`0`).
 
-**6. Open the site**, type your `APP_PASSWORD`, and the tracker is live.
+**7. Open the site**, type your `APP_PASSWORD`, and the tracker is live.
 
 ### Keeping it private
 
@@ -59,11 +70,15 @@ stay reachable by the agent because they authenticate with a bearer token, not a
 
 ```bash
 npm install
-cp .env.example .env.local     # fill in DATABASE_URL, AGENT_TOKEN
+supabase start                 # local Supabase in Docker; applies supabase/migrations/
+cp .env.example .env.local     # fill in SUPABASE_URL, SUPABASE_SECRET_KEY, AGENT_TOKEN
 npm run dev
 ```
 
-With no `DATABASE_URL` the site still boots and renders the seed snapshot read-only — handy
+`supabase start` prints the local API URL and secret key; `supabase status` shows them again.
+Or point `.env.local` at your hosted project instead.
+
+With no Supabase credentials the site still boots and renders the seed snapshot read-only — handy
 for checking the UI, useless for tracking anything.
 
 ---
@@ -104,7 +119,8 @@ curl -X PATCH https://<app>.vercel.app/api/jobs/databricks-ai-engineer-fde \
 ### Activity log
 
 Every change to `status`, `interviewAt`, `deadline` or `messagedOn` writes a row to the
-`events` table, whether it came from the browser or the agent. That's what the Activity
+`events` table, whether it came from the browser, the agent, or a hand edit in Supabase
+Studio — a Postgres trigger does the logging. That's what the Activity
 panel shows, and what makes the weekly funnel numbers real rather than guessed.
 
 ---
@@ -138,8 +154,10 @@ app/
   api/seed/route.js     one-time import
   api/auth/route.js     sign in / out
 components/Tracker.jsx  board, table, detail editor, activity
-lib/db.js               Postgres access, schema, seed fallback, event log
+lib/supabase.js         server-only Supabase client (secret key)
+lib/db.js               data access and seed fallback
 lib/auth.js             bearer token and session checks
 proxy.js                redirects to /login when APP_PASSWORD is set
 seed/                   the exported snapshot
+supabase/migrations/    schema, RLS, event-log trigger, merge_job() and import_seed()
 ```

@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 export async function POST(request) {
   if (!(await canWrite(request))) return unauthorized();
   if (!hasDb) {
-    return Response.json({ error: 'No DATABASE_URL set.' }, { status: 409 });
+    return Response.json({ error: 'Supabase is not configured. Set SUPABASE_URL and SUPABASE_SECRET_KEY.' }, { status: 409 });
   }
   try {
     const n = await importSeed();

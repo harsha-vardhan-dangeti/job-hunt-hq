@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 
 function noDb() {
   return Response.json(
-    { error: 'No database configured. Set DATABASE_URL to enable writes.' },
+    { error: 'No database configured. Set SUPABASE_URL and SUPABASE_SECRET_KEY to enable writes.' },
     { status: 409 }
   );
 }
