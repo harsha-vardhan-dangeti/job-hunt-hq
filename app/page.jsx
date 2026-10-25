@@ -1,0 +1,27 @@
+import Tracker from '../components/Tracker';
+import { listJobs, getBrief, listEvents, hasDb } from '../lib/db';
+
+export const dynamic = 'force-dynamic';
+
+export default async function Page() {
+  let jobs = [];
+  let brief = {};
+  let events = [];
+  let error = '';
+
+  try {
+    [jobs, brief, events] = await Promise.all([listJobs(), getBrief(), listEvents(30)]);
+  } catch (err) {
+    error = String(err.message || err);
+  }
+
+  return (
+    <Tracker
+      initialJobs={jobs}
+      initialBrief={brief}
+      events={events}
+      readOnly={!hasDb}
+      loadError={error}
+    />
+  );
+}

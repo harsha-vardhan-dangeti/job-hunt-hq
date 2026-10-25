@@ -1,0 +1,21 @@
+{
+  "date": "2026-10-23",
+  "naukri": "Backend + AI Engineer | 4 yrs Qualcomm | Agentic AI: LangGraph, MCP tool-calling, production RAG | Python, FastAPI, pgvector, ChromaDB, Redis | FDE / Applied AI | Hyderabad or Remote India",
+  "todo": [
+    "MICROSOFT ACES CODE — THE WINDOW SHUTS IN TWO DAYS. Applied AI Engineer II, Hyderabad, posted 20 Oct, bar is '3+ years in C# and/or Python with production deployment' — below your four. The posting states it stays open a minimum of 5 days, which runs out around Sunday 25 Oct. If you do ONE thing today, do this. Pull the req ID off jobs.careers.microsoft.com, then do the Windows AI Platform req in the same sitting.",
+    "APPLE — NEW TIER 1 REQ, TWO DAYS OLD, and the first Apple title that says AGENT outright. 'Software Engineer – Agent Development', requisition 200690641-1052, Hyderabad, posted 21 Oct. Added at fit 4 with a draft written. The JD body is unread (jobs.apple.com detail pages render nothing to any tool here), so ten minutes in your own browser decides whether it goes to 5.",
+    "DATABRICKS — DAY TWENTY-NINE. AI Engineer FDE, CSQ326R35, Remote India, fit 5, exact title, draft written, no years bar you fail. Today's search also turned up a 'Sr Forward Deployed Engineer — Remote India, 44519' and an 'FDE L4' on mirrors, so the India FDE org is hiring across three bands at once.",
+    "FIX YOUR NAUKRI PROFILE — fifth consecutive day, ten minutes. Set preferred location to Hyderabad plus remote, set preferred salary to 30 LPA minimum, change preferred role from 'Software Development Engineer' to AI/Applied AI Engineer. naukri.com/mnjuser.",
+    "SALESFORCE AND GOLDMAN — the browser pass, week five, thirty minutes, eight rows. Salesforce: the 'Forward Deployed Engineer (Multiple Levels)' retitling is confirmed on a second mirror, which if real means the Senior tag no longer screens out a 4-year candidate — open JR331258 and JR340189 yourself. Goldman: req 153571 stands on Tuesday's Glassdoor confirmation. Never quote 163837.",
+    "AZURE OR AWS — tenth week, still unbooked. Eleven live rows name a cloud as a must-have. Book AZ-204 or AI-102 today with money on it. Tonight's 30-minute fallback: write the judge-agent eval — 20 golden Q&A pairs scored by a model-as-judge rubric with pass/fail gates — against one of your own RAG pipelines."
+  ],
+  "inbox": [
+    "TWO new Naukri recruiter invites (22 Oct), both rejected on hard filters, neither added. Logiciel Solutions 'Applied AI Engineer': JD non-negotiables say 6–15 years and WFO Ludhiana. Ronas Soft Solutions 'Full-Stack AI Product Engineer', remote India, stack genuinely close to yours — but the published band is ₹1.0–5.0 LAKHS.",
+    "ZERO ATS mail for the NINETEENTH straight day — nothing from lever.co, greenhouse.io, Workday, Ashby, SmartRecruiters, iCIMS, successfactors or taleo. Four days after the Coforge application there is still no acknowledgement from Coforge, your only live application.",
+    "STILL UNPLACED: the second of the two 20 Oct Naukri applications. The mail names only the eClerx Python Fullstack req. Tell me what the other one was and I will set the row.",
+    "1 recruiter-interest notice (info@naukri.com, 23 Oct). Calendar was reachable and EMPTY for 23–31 Oct; no row has status interviewing, so no blocks were created.",
+    "TWO new rows — Apple 'Software Engineer – Agent Development' (Hyderabad, 21 Oct, fit 4, draft written) and NTT DATA 'Forward Deployed Engineer' (Hyderabad, hybrid, full-time not contract, 22 Oct, fit 3, JD body is the placeholder text '[to be created]')."
+  ],
+  "notes": "Two adds, one genuinely good: Apple's 'Software Engineer – Agent Development' (200690641-1052, Hyderabad, 21 Oct) is the first Apple title in this file that names agents rather than data pipelines. NTT DATA's FDE is thin — full-time and hybrid in Hyderabad, so it clears the contract filter, but the JD body is an empty placeholder. Demand side is unchanged and bad: one live application, at a services firm, with no acknowledgement four days on. Micron's careers board is now robots-blocked and permanently unreadable to the agent. Staleness: three rows crossed 21 days — Atlassian MLE II, V3 Staffing (drop), Google Cloud AI Engineer English (keep, narrowly).",
+  "updatedOn": "2026-10-23"
+}
