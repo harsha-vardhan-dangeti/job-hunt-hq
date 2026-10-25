@@ -154,6 +154,23 @@ prompt with:
 
 Ask Claude to do it and hand over the URL and token.
 
+### Run the agent from the site
+
+The **Run agent now** button on the brief card starts the morning routine immediately through
+its API trigger, instead of waiting for the 8:30 weekday run. To connect it:
+
+1. claude.ai/code/routines → the routine → **Edit** → **Trigger** row → **+** → **API**.
+   Copy the routine id from the Fire URL (`trig_…`), then **Generate token** and copy it
+   (shown once).
+2. Add both to Vercel and redeploy:
+
+   ```bash
+   vercel env add AGENT_ROUTINE_ID production      # trig_…
+   vercel env add AGENT_ROUTINE_TOKEN production --sensitive
+   ```
+
+Until both are set the button stays disabled. A routine can be fired 30 times an hour.
+
 ---
 
 ## Layout

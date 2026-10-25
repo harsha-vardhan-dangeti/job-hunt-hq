@@ -159,7 +159,7 @@ function dailyActivity(jobs, events) {
   return days;
 }
 
-export default function Tracker({ initialJobs, initialBrief, events = [], readOnly, loadError }) {
+export default function Tracker({ initialJobs, initialBrief, events = [], readOnly, loadError, agentReady }) {
   const [jobs, setJobs] = useState(initialJobs || []);
   const [brief] = useState(initialBrief || {});
   const [view, setView] = useState('board');
@@ -397,9 +397,12 @@ export default function Tracker({ initialJobs, initialBrief, events = [], readOn
       <section className="card" aria-labelledby="brief-h">
         <div className="card-head">
           <h2 id="brief-h">Today&apos;s brief</h2>
-          <span className="eyebrow">
-            {brief.date ? `Updated ${fmtDate(brief.date)}` : 'No brief yet'}
-          </span>
+          <div className="brief-head-right">
+            <span className="eyebrow">
+              {brief.date ? `Updated ${fmtDate(brief.date)}` : 'No brief yet'}
+            </span>
+            <RunAgent ready={agentReady} />
+          </div>
         </div>
         <div className="brief-grid">
           <div className="bcell">
@@ -955,6 +958,59 @@ function PaceCard({ funnel, counts }) {
       {funnel.applied} applied, {counts.interviewing} interviewing, {counts.offer} offer
       {counts.offer === 1 ? '' : 's'}.
     </section>
+  );
+}
+
+/** Starts the morning agent now instead of waiting for its 8:30 weekday run. */
+function RunAgent({ ready }) {
+  const [state, setState] = useState({ busy: false, started: false, url: null, error: '' });
+
+  async function run() {
+    if (
+      !window.confirm(
+        'Run the job-hunt agent now?\n\nIt syncs Gmail, adds new roles, writes drafts and rewrites today\'s brief. A run takes about 10 minutes; reload the page afterwards to see the results.'
+      )
+    )
+      return;
+    setState({ busy: true, started: false, url: null, error: '' });
+    try {
+      const res = await fetch('/api/agent/run', { method: 'POST' });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error || `Couldn't start the agent (${res.status})`);
+      setState({ busy: false, started: true, url: body.sessionUrl, error: '' });
+    } catch (e) {
+      setState({ busy: false, started: false, url: null, error: e.message });
+    }
+  }
+
+  if (state.started) {
+    return (
+      <span className="agent-status">
+        Agent started
+        {state.url ? (
+          <>
+            {' · '}
+            <a href={state.url} target="_blank" rel="noopener noreferrer">
+              Watch the run ↗
+            </a>
+          </>
+        ) : null}
+      </span>
+    );
+  }
+  return (
+    <span className="agent-run">
+      <button
+        className="ghost"
+        onClick={run}
+        disabled={!ready || state.busy}
+        title={ready ? 'Start the scheduled agent now' : 'Connect the agent first: see the README'}
+      >
+        {state.busy ? 'Starting…' : 'Run agent now'}
+      </button>
+      {state.error ? <span className="saved err">{state.error}</span> : null}
+      {!ready ? <span className="muted small">Agent not connected</span> : null}
+    </span>
   );
 }
 

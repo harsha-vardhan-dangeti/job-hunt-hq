@@ -169,6 +169,8 @@ h2 { font: 600 15px var(--display); margin: 0; }
   overflow-wrap: break-word;
 }
 .notes-body { color: var(--muted); max-height: 230px; overflow-y: auto; }
+.brief-head-right { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.agent-run, .agent-status { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12px; }
 
 .banner {
   border-radius: 8px;
