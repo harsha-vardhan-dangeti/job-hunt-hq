@@ -85,6 +85,10 @@ for checking the UI, useless for tracking anything.
 
 ## What's on the page
 
+Five sections, in the top bar on desktop and a bottom tab bar on phones (keys 1–5 switch,
+`/` searches). Click any role anywhere to open its panel: a stage tracker you can click to
+move it, what it needs next, its full history, and every field.
+
 - **Today** — up to five things to do now: interviews and live deadlines first, then follow-ups
   that have come due, roles you pinned, and fit-4+ roles with a draft but no message sent.
   "Mark sent" sets `messagedOn`, moves the row to `outreach` and books a follow-up in 5 days.
@@ -186,7 +190,15 @@ app/
   api/brief/route.js    read + replace the brief
   api/seed/route.js     one-time import
   api/auth/route.js     sign in / out
-components/Tracker.jsx  board, table, detail editor, activity
+components/
+  Tracker.jsx           app shell: nav, sections, role panel, undo toast
+  Nav.jsx               top bar on desktop, bottom tab bar on phones
+  TodayView.jsx         next move, the rest of the queue, decide or drop, brief
+  ListViews.jsx         filters, Pipeline board (drag to change stage), Roles table
+  RoleDrawer.jsx        one role: stage tracker, next step, history, all fields
+  InsightsView.jsx      pace, weekly target, streak, chart, funnel, sources
+  ActivityView.jsx      every change in the last 90 days, by day
+  model.js              statuses, dates, queue rules (no React)
 lib/supabase.js         server-only Supabase client (secret key)
 lib/db.js               data access and seed fallback
 lib/auth.js             bearer token and session checks

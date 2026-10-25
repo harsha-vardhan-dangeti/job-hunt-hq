@@ -11,7 +11,7 @@ export default async function Page() {
   let error = '';
 
   try {
-    [jobs, brief, events] = await Promise.all([listJobs(), getBrief(), listEvents(30)]);
+    [jobs, brief, events] = await Promise.all([listJobs(), getBrief(), listEvents(90)]);
   } catch (err) {
     error = String(err.message || err);
   }
@@ -24,6 +24,7 @@ export default async function Page() {
       readOnly={!hasDb}
       loadError={error}
       agentReady={agentReady}
+      gated={Boolean(process.env.APP_PASSWORD)}
     />
   );
 }

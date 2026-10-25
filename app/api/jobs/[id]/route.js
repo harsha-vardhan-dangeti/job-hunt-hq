@@ -1,5 +1,5 @@
-import { upsertJob, deleteJob, hasDb } from '../../../../lib/db';
-import { canWrite, unauthorized } from '../../../../lib/auth';
+import { upsertJob, deleteJob, listJobEvents, hasDb } from '../../../../lib/db';
+import { canRead, canWrite, unauthorized } from '../../../../lib/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -8,6 +8,17 @@ function noDb() {
     { error: 'No database configured. Set SUPABASE_URL and SUPABASE_SECRET_KEY to enable writes.' },
     { status: 409 }
   );
+}
+
+/** One role's logged history, for the timeline in its panel. */
+export async function GET(request, { params }) {
+  if (!(await canRead(request))) return unauthorized();
+  try {
+    const { id } = await params;
+    return Response.json({ events: await listJobEvents(id) });
+  } catch (err) {
+    return Response.json({ error: String(err.message || err) }, { status: 500 });
+  }
 }
 
 export async function PATCH(request, { params }) {
