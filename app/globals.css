@@ -439,44 +439,54 @@ button.danger:hover:not(:disabled) { border-color: var(--bad); }
   max-width: 90ch;
 }
 
-.brief-page-head { display: flex; justify-content: space-between; align-items: end; gap: 16px; flex-wrap: wrap; }
-.brief-page-head h1 { font-size: 34px; }
+/* The brief reads as a document: one rule under the masthead, items split by
+   hairlines, and only the first to-do raised. */
+.brief-doc { display: grid; gap: 28px; }
+.brief-masthead {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 4px 0 20px;
+  border-bottom: 2px solid var(--ink);
+}
+.brief-masthead h1 { font-size: 40px; letter-spacing: -0.025em; }
+.brief-masthead p { margin: 6px 0 0; color: var(--muted); font-size: 15px; }
 .brief-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 340px;
-  gap: 20px;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 48px;
   align-items: start;
 }
-.brief-main, .brief-side { display: grid; gap: 20px; min-width: 0; }
-.brief-side { position: sticky; top: calc(var(--topbar-h) + 20px); }
-.brief-sec { padding: 22px 26px; gap: 16px; }
-.brief-sec h2, .brief-side h2 { font-size: 19px; }
-.blist { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.brief-main { display: grid; gap: 44px; min-width: 0; }
+.brief-main h2, .brief-side h2 { font-size: 20px; margin-bottom: 6px; }
+.brief-side {
+  display: grid;
+  gap: 36px;
+  min-width: 0;
+  position: sticky;
+  top: calc(var(--topbar-h) + 24px);
+  padding-left: 28px;
+  border-left: 1px solid var(--line);
+}
+.brief-side section { display: grid; gap: 10px; }
+.blist { list-style: none; margin: 0; padding: 0; }
 .bitem {
   display: grid;
-  grid-template-columns: 36px minmax(0, 1fr);
-  gap: 14px;
-  align-items: start;
-  padding: 16px 18px;
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  border-radius: 10px;
+  grid-template-columns: 44px minmax(0, 1fr);
+  gap: 8px;
+  padding: 18px 0;
+  border-top: 1px solid var(--line);
 }
 .blist.plain .bitem { grid-template-columns: minmax(0, 1fr); }
-.bitem p { margin: 0; font-size: 16.5px; line-height: 1.7; max-width: 78ch; overflow-wrap: break-word; }
-.bitem strong { font-family: var(--display); font-weight: 600; color: var(--ink); }
-.blist:not(.plain) .bitem:first-child { background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 30%, var(--line)); }
-.bnum {
-  display: grid;
-  place-items: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: var(--accent);
-  color: #fff;
-  font: 700 15px var(--display);
-}
-.bnotes { margin: 0; font-size: 15px; line-height: 1.7; color: var(--ink); overflow-wrap: break-word; }
+.bitem p { margin: 0; font-size: 17px; line-height: 1.7; max-width: 68ch; overflow-wrap: break-word; }
+.bitem strong { font-family: var(--display); font-weight: 600; }
+.bnum { font: 600 22px/1.35 var(--display); color: var(--accent); }
+.blist:not(.plain) .bitem:first-child { padding-top: 22px; }
+.blist:not(.plain) .bitem:first-child p { font-size: 20px; line-height: 1.6; }
+.blist:not(.plain) .bitem:first-child .bnum { font-size: 34px; line-height: 1.05; }
+.bnotes { margin: 0; font-size: 15px; line-height: 1.75; color: var(--ink); overflow-wrap: break-word; }
 
 /* ---------- resumes ---------- */
 
@@ -487,10 +497,11 @@ textarea.master-text { min-height: 420px; font-size: 14px; line-height: 1.6; }
 
 .resume-layout {
   display: grid;
-  grid-template-columns: 300px minmax(0, 1fr);
+  grid-template-columns: 260px minmax(0, 1fr);
   gap: 20px;
   align-items: start;
 }
+.wrap.wide { max-width: 1440px; }
 .rlist { padding: 14px; gap: 18px; position: sticky; top: calc(var(--topbar-h) + 20px); max-height: calc(100vh - var(--topbar-h) - 40px); overflow-y: auto; }
 .rgroup { display: grid; gap: 6px; }
 .rgroup h3 { padding: 0 6px; }
@@ -521,24 +532,40 @@ textarea.master-text { min-height: 420px; font-size: 14px; line-height: 1.6; }
 
 .viewer { display: grid; gap: 16px; min-width: 0; }
 .viewer-head { display: flex; justify-content: space-between; align-items: start; gap: 14px; flex-wrap: wrap; }
-.viewer-head h2 { font-size: 20px; }
-.viewer-head p { margin-top: 4px; }
+.viewer-head h2 { font-size: 22px; }
+.viewer-role { margin: 2px 0 0; color: var(--muted); font-size: 15px; }
+.viewer-head p.small { margin-top: 6px; }
+/* The resume is the page; how it fits the role sits beside it. */
+.viewer-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 260px;
+  gap: 20px;
+  align-items: start;
+}
+.viewer-rail { display: grid; gap: 12px; position: sticky; top: calc(var(--topbar-h) + 20px); }
+.rail-block {
+  display: grid;
+  gap: 8px;
+  padding: 14px 16px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.rail-block p { margin: 0; }
 .check { gap: 8px; }
 .check.ok { background: var(--ok-soft); border-color: color-mix(in srgb, var(--ok) 35%, var(--line)); }
 .check.ok h3 { color: var(--ok); }
 .check.warn { background: var(--warn-soft); border-color: color-mix(in srgb, var(--warn) 40%, var(--line)); }
 .check.warn h3 { color: var(--warn); }
 .check p { margin: 0; }
-.match-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
-.match-grid .card { gap: 10px; align-content: start; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .kchip { font-size: 12px; font-weight: 500; padding: 3px 9px; border-radius: 999px; border: 1px solid currentColor; }
 .kchip.ok { color: var(--ok); background: var(--ok-soft); }
 .kchip.warn { color: var(--warn); background: var(--warn-soft); }
 .kchip.bad { color: var(--bad); background: var(--bad-soft); }
-.changes:not([open]) { gap: 0; }
+.rail-block.changes:not([open]) { gap: 0; }
 .changes summary { cursor: pointer; font-weight: 600; }
-.changes ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; color: var(--muted); }
+.changes ul { font-size: 13px;  margin: 0; padding-left: 18px; display: grid; gap: 4px; color: var(--muted); }
 
 /* The resume itself reads as a printed page in both themes. */
 .resume-doc {
@@ -1041,9 +1068,14 @@ table.mini th, table.mini td { padding: 4px 14px 4px 0; position: static; }
   .tabs a[aria-current='page'] .nav-label { display: inline; }
 }
 
+@media (max-width: 1180px) {
+  .viewer-body { grid-template-columns: minmax(0, 1fr); }
+  .viewer-rail { position: static; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+}
+
 @media (max-width: 960px) {
   .brief-layout, .resume-layout { grid-template-columns: minmax(0, 1fr); }
-  .brief-side { position: static; }
+  .brief-side { position: static; padding-left: 0; border-left: 0; padding-top: 28px; border-top: 1px solid var(--line); }
   .rlist { position: static; max-height: 360px; }
 }
 
@@ -1064,7 +1096,7 @@ table.mini th, table.mini td { padding: 4px 14px 4px 0; position: static; }
   .days-left { margin-right: 0; }
   .tabbar {
     display: grid;
-    grid-template-columns: repeat(7, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     position: fixed;
     left: 0;
     right: 0;
@@ -1083,10 +1115,46 @@ table.mini th, table.mini td { padding: 4px 14px 4px 0; position: static; }
     gap: 3px;
     color: var(--muted);
     text-decoration: none;
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 500;
   }
-  .tabbar a[aria-current='page'] { color: var(--accent); }
+  .tabbar .tab-more {
+    display: grid;
+    justify-items: center;
+    align-content: center;
+    gap: 3px;
+    background: none;
+    border: 0;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .tabbar a[aria-current='page'], .tabbar .tab-more[aria-current='page'] { color: var(--accent); }
+  .more-scrim { position: fixed; inset: 0; z-index: -1; background: rgb(0 0 0 / 0.25); }
+  .more-sheet {
+    position: fixed;
+    right: 8px;
+    bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 8px);
+    display: grid;
+    min-width: 200px;
+    padding: 6px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgb(0 0 0 / 0.18);
+  }
+  .tabbar .more-sheet a {
+    display: flex;
+    justify-items: start;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 15px;
+    color: var(--ink);
+  }
+  .tabbar .more-sheet a[aria-current='page'] { background: var(--accent-soft); color: var(--accent); }
   .tabbar .nav-icon { width: 22px; height: 22px; }
   .tabbar .badge { position: absolute; top: 6px; left: calc(50% + 6px); min-width: 17px; height: 17px; font-size: 10px; }
   .toast { bottom: calc(var(--tabbar-h) + 14px); }
@@ -1104,11 +1172,13 @@ table.mini th, table.mini td { padding: 4px 14px 4px 0; position: static; }
   .drawer-head, .drawer-body, .drawer-foot { padding-left: 16px; padding-right: 16px; }
   .dgrid { grid-template-columns: 1fr; }
   .step-label { font-size: 11px; }
-  .brief-page-head h1 { font-size: 26px; }
-  .brief-sec { padding: 16px; }
-  .bitem { grid-template-columns: 28px minmax(0, 1fr); gap: 10px; padding: 12px 14px; }
-  .bnum { width: 26px; height: 26px; font-size: 13px; }
-  .bitem p { font-size: 15.5px; }
+  .brief-masthead h1 { font-size: 30px; }
+  .brief-main { gap: 32px; }
+  .bitem { grid-template-columns: 30px minmax(0, 1fr); padding: 14px 0; }
+  .bitem p { font-size: 16px; }
+  .bnum { font-size: 18px; }
+  .blist:not(.plain) .bitem:first-child p { font-size: 18px; }
+  .blist:not(.plain) .bitem:first-child .bnum { font-size: 26px; }
   .resume-doc { padding: 24px 18px; }
   textarea.master-text { min-height: 300px; }
 }

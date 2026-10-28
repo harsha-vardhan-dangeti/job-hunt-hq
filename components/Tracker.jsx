@@ -236,7 +236,7 @@ export default function Tracker({
         onSignOut={gated ? signOut : null}
       />
 
-      <main className="wrap" id="main">
+      <main className={`wrap${view === 'resumes' ? ' wide' : ''}`} id="main">
         {loadError ? (
           <div className="banner bad">
             Couldn&apos;t reach Supabase: {loadError}. Check <code>SUPABASE_URL</code> and{' '}

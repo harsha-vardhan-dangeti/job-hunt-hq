@@ -11,7 +11,7 @@ import {
 } from './lib/gate';
 
 export const config = {
-  matcher: ['/((?!api|auth|_next/static|_next/image|login|favicon.ico).*)'],
+  matcher: ['/((?!api|auth|_next/static|_next/image|login|favicon.ico|icon.svg).*)'],
 };
 
 /** Keeps the Google session fresh and sends anyone not signed in to /login. */

@@ -45,7 +45,7 @@ function MasterCard({ master, setMaster, readOnly }) {
           <p className="muted small">
             {empty
               ? 'Not added yet.'
-              : `Updated ${fmtDate(master.updatedOn)} · ${words} words. The only source of facts for every tailored resume.`}
+              : `Updated ${fmtDate(master.updatedOn)}, ${words} words. The only source of facts for every tailored resume.`}
           </p>
         </div>
         {!editing ? (
@@ -250,9 +250,8 @@ function Viewer({ j, master, tailor, openRole, readOnly, agentReady }) {
     <section className="viewer" aria-labelledby="viewer-h">
       <div className="card viewer-head">
         <div>
-          <h2 id="viewer-h">
-            {j.company} <span className="muted">· {j.role || 'Role to pick'}</span>
-          </h2>
+          <h2 id="viewer-h">{j.company}</h2>
+          <p className="viewer-role">{j.role || 'Role to pick'}</p>
           <p className="muted small">
             {r
               ? `Tailored ${fmtDate(r.generatedOn)} from ${JD_SOURCE[r.jdSource] || 'the role'}.`
@@ -281,37 +280,38 @@ function Viewer({ j, master, tailor, openRole, readOnly, agentReady }) {
       </div>
 
       {r ? (
-        <>
-          {!master.text?.trim() ? (
-            <div className="card check warn">
-              <h3>Can&apos;t check facts yet</h3>
-              <p className="small">Add your master resume above, and every item here is checked against it.</p>
-            </div>
-          ) : (
-            <div className={`card check ${unverified.length ? 'warn' : 'ok'}`}>
-              <h3>{unverified.length ? 'Check these before you send it' : 'Every fact checks out'}</h3>
-              {unverified.length ? (
-                <>
-                  <p className="small">
-                    These aren&apos;t in your master resume. Remove them, or add them to the master if they&apos;re
-                    true.
-                  </p>
-                  <div className="chips">
-                    {unverified.map((u) => (
-                      <span key={u} className="kchip bad">
-                        {u}
-                      </span>
-                    ))}
-                  </div>
-                </>
-              ) : (
-                <p className="small">Every employer, title, skill and number here appears in your master resume.</p>
-              )}
-            </div>
-          )}
+        <div className="viewer-body">
+          <Doc r={r} />
+          <aside className="viewer-rail" aria-label="How this resume fits the role">
+            {!master.text?.trim() ? (
+              <div className="rail-block check warn">
+                <h3>Can&apos;t check facts yet</h3>
+                <p className="small">Add your master resume above, and every item here is checked against it.</p>
+              </div>
+            ) : (
+              <div className={`rail-block check ${unverified.length ? 'warn' : 'ok'}`}>
+                <h3>{unverified.length ? 'Check these before you send it' : 'Every fact checks out'}</h3>
+                {unverified.length ? (
+                  <>
+                    <p className="small">
+                      These aren&apos;t in your master resume. Remove them, or add them to the master if they&apos;re
+                      true.
+                    </p>
+                    <div className="chips">
+                      {unverified.map((u) => (
+                        <span key={u} className="kchip bad">
+                          {u}
+                        </span>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <p className="small">Every employer, title, skill and number here appears in your master resume.</p>
+                )}
+              </div>
+            )}
 
-          <div className="match-grid">
-            <div className="card">
+            <div className="rail-block">
               <h3>What the role asks for that you have</h3>
               <div className="chips">
                 {(r.match?.covered || []).length ? (
@@ -325,7 +325,7 @@ function Viewer({ j, master, tailor, openRole, readOnly, agentReady }) {
                 )}
               </div>
             </div>
-            <div className="card">
+            <div className="rail-block">
               <h3>Gaps, left out on purpose</h3>
               <div className="chips">
                 {(r.match?.gaps || []).length ? (
@@ -344,21 +344,19 @@ function Viewer({ j, master, tailor, openRole, readOnly, agentReady }) {
                 </p>
               ) : null}
             </div>
-          </div>
 
-          {r.changes?.length ? (
-            <details className="card changes">
-              <summary>What was tailored for this role ({r.changes.length})</summary>
-              <ul>
-                {r.changes.map((c, i) => (
-                  <li key={i}>{c}</li>
-                ))}
-              </ul>
-            </details>
-          ) : null}
-
-          <Doc r={r} />
-        </>
+            {r.changes?.length ? (
+              <details className="rail-block changes">
+                <summary>What was tailored for this role ({r.changes.length})</summary>
+                <ul>
+                  {r.changes.map((c, i) => (
+                    <li key={i}>{c}</li>
+                  ))}
+                </ul>
+              </details>
+            ) : null}
+          </aside>
+        </div>
       ) : (
         <div className="card empty-state">
           <h3>Nothing here yet</h3>

@@ -158,24 +158,30 @@ function QueueRow({ item, act, openRole, readOnly }) {
 /** One line on Today pointing at the full brief, which has its own section. */
 function BriefTeaser({ brief, openBrief }) {
   const fresh = brief.date === today();
-  const first = brief.todo?.[0];
+  const counts = [
+    brief.todo?.length ? `${brief.todo.length} to-dos` : '',
+    brief.inbox?.length ? `${brief.inbox.length} inbox notes` : '',
+  ].filter(Boolean);
   return (
     <section className="card brief-teaser" aria-labelledby="brief-h">
-      <div className="card-head">
+      <div>
         <h2 id="brief-h">Morning brief</h2>
-        <span className="eyebrow">
-          {brief.date ? `Written ${fmtDate(brief.date)}${fresh ? '' : ', not refreshed today'}` : 'No brief yet'}
-          {brief.todo?.length ? ` · ${brief.todo.length} to-dos` : ''}
-          {brief.inbox?.length ? ` · ${brief.inbox.length} inbox notes` : ''}
-        </span>
+        <p className="muted small">
+          {brief.date
+            ? `Written ${fmtDate(brief.date)}${fresh ? '' : ', not refreshed today'}${
+                counts.length ? `, with ${counts.join(' and ')}` : ''
+              }.`
+            : 'No brief yet. The agent writes one at 8:30 every weekday.'}
+        </p>
       </div>
-      {first ? <p className="teaser-line">{first}</p> : null}
+      {brief.todo?.[0] ? <p className="teaser-line">{brief.todo[0]}</p> : null}
       <button className="ghost" style={{ justifySelf: 'start' }} onClick={openBrief}>
-        Read the brief →
+        Read the brief
       </button>
     </section>
   );
 }
+
 
 function DecideCard({ jobs, act, openRole, readOnly }) {
   const [showAll, setShowAll] = useState(false);

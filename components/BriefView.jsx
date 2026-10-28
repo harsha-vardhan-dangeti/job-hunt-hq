@@ -1,12 +1,12 @@
 import { fmtDate, today } from './model';
 import { CopyBox, RunAgent } from './parts';
 
-/** Split "LEAD SENTENCE. The rest…" so the lead can stand out. Only short
+/** Split "Lead sentence. The rest…" so the lead can stand out. Only short
  *  leads count; a long first sentence stays as body text. */
 function splitLead(text) {
   const m = String(text).match(/^(.{4,110}?)(?:([.!?])|\s(—))\s+(.+)$/s);
   if (!m) return ['', String(text)];
-  // "LEAD — rest" keeps its dash in the body; "Lead. Rest" keeps its full stop on the lead.
+  // "Lead — rest" keeps its dash in the body; "Lead. Rest" keeps its full stop on the lead.
   return m[3] ? [m[1], `— ${m[4]}`] : [m[1] + m[2], m[4]];
 }
 
@@ -14,11 +14,7 @@ function Item({ text, n }) {
   const [lead, rest] = splitLead(text);
   return (
     <li className="bitem">
-      {n != null ? (
-        <span className="bnum" aria-hidden="true">
-          {n}
-        </span>
-      ) : null}
+      {n != null ? <span className="bnum">{n}</span> : null}
       <p>
         {lead ? <strong>{lead} </strong> : null}
         {rest}
@@ -27,7 +23,7 @@ function Item({ text, n }) {
   );
 }
 
-/** The agent's morning brief on its own page, sized for reading. */
+/** The agent's morning brief on its own page, laid out for reading rather than scanning. */
 export default function BriefView({ brief, agentReady }) {
   const todo = brief.todo || [];
   const inbox = brief.inbox || [];
@@ -37,11 +33,11 @@ export default function BriefView({ brief, agentReady }) {
     : null;
 
   return (
-    <>
-      <header className="page-head brief-page-head">
+    <article className="brief-doc">
+      <header className="brief-masthead">
         <div>
           <h1>Morning brief</h1>
-          <p>{written ? `Written ${written}.` : 'No brief yet.'} The agent rewrites it at 8:30 every weekday.</p>
+          <p>{written ? `Written ${written}` : 'No brief yet'}</p>
         </div>
         <RunAgent ready={agentReady} />
       </header>
@@ -54,11 +50,8 @@ export default function BriefView({ brief, agentReady }) {
 
       <div className="brief-layout">
         <div className="brief-main">
-          <section className="card brief-sec" aria-labelledby="todo-h">
-            <div className="card-head">
-              <h2 id="todo-h">To do</h2>
-              <span className="eyebrow">{todo.length} items, most important first</span>
-            </div>
+          <section aria-labelledby="todo-h">
+            <h2 id="todo-h">To do, most important first</h2>
             {todo.length ? (
               <ol className="blist">
                 {todo.map((t, i) => (
@@ -66,15 +59,12 @@ export default function BriefView({ brief, agentReady }) {
                 ))}
               </ol>
             ) : (
-              <p className="muted">Nothing yet. The agent fills this in each weekday morning.</p>
+              <p className="muted">Nothing yet. The agent writes this at 8:30 every weekday.</p>
             )}
           </section>
 
-          <section className="card brief-sec" aria-labelledby="inbox-h">
-            <div className="card-head">
-              <h2 id="inbox-h">From your inbox</h2>
-              <span className="eyebrow">Recruiter mail and application updates</span>
-            </div>
+          <section aria-labelledby="inbox-h">
+            <h2 id="inbox-h">From your inbox</h2>
             {inbox.length ? (
               <ul className="blist plain">
                 {inbox.map((t, i) => (
@@ -82,22 +72,22 @@ export default function BriefView({ brief, agentReady }) {
                 ))}
               </ul>
             ) : (
-              <p className="muted">No mail worth acting on.</p>
+              <p className="muted">No recruiter mail or application updates to act on.</p>
             )}
           </section>
         </div>
 
         <aside className="brief-side">
-          <section className="card" aria-labelledby="naukri-h">
+          <section aria-labelledby="naukri-h">
             <h2 id="naukri-h">Naukri headline</h2>
             <CopyBox text={brief.naukri} />
           </section>
-          <section className="card" aria-labelledby="notes-h">
+          <section aria-labelledby="notes-h">
             <h2 id="notes-h">Market notes</h2>
             <p className="bnotes">{brief.notes || 'Nothing yet.'}</p>
           </section>
         </aside>
       </div>
-    </>
+    </article>
   );
 }
