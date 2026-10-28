@@ -37,6 +37,8 @@ function Links({ view, setView, badges, only }) {
     <a
       key={k}
       href={`#${k}`}
+      aria-label={badges[k] ? `${label} (${badges[k]})` : label}
+      title={label}
       aria-current={view === k ? 'page' : undefined}
       onClick={(e) => {
         e.preventDefault();
@@ -103,44 +105,71 @@ function TabBar({ view, setView, badges }) {
   );
 }
 
-/** Sticky top bar on wide screens; on phones the section links move to a bottom tab bar. */
+function Brand({ setView }) {
+  return (
+    <a
+      className="brand"
+      href="#today"
+      onClick={(e) => {
+        e.preventDefault();
+        setView('today');
+      }}
+    >
+      <span className="brand-mark" aria-hidden="true">
+        JH
+      </span>
+      <span className="brand-name">Job Hunt HQ</span>
+    </a>
+  );
+}
+
+function ThemeButton({ theme, toggleTheme }) {
+  return (
+    <button className="ghost" onClick={toggleTheme} aria-label="Switch colour theme">
+      {theme === 'dark' ? 'Light' : 'Dark'}
+    </button>
+  );
+}
+
+/** A sidebar on desktop (an icon rail on tablets). Phones get a slim top bar
+ *  and the bottom tab bar instead. */
 export default function Nav({ view, setView, badges, daysLeft, theme, toggleTheme, onSignOut }) {
+  const tight = daysLeft <= 21 ? ' tight' : '';
   return (
     <>
-      <header className="topbar">
-        <div className="topbar-inner">
-          <a
-            className="brand"
-            href="#today"
-            onClick={(e) => {
-              e.preventDefault();
-              setView('today');
-            }}
-          >
-            <span className="brand-mark" aria-hidden="true">
-              JH
-            </span>
-            Job Hunt HQ
-          </a>
-          <nav className="tabs" aria-label="Sections">
-            <Links view={view} setView={setView} badges={badges} />
-          </nav>
-          <div className="topbar-right">
-            <span
-              className={`days-left${daysLeft <= 21 ? ' tight' : ''}`}
-              title="Days until your 15 November offer date"
-            >
-              <b>{daysLeft}</b> days left
-            </span>
-            <button className="ghost" onClick={toggleTheme} aria-label="Switch colour theme">
-              {theme === 'dark' ? 'Light' : 'Dark'}
-            </button>
+      <aside className="sidebar">
+        <Brand setView={setView} />
+        <nav className="side-nav" aria-label="Sections">
+          <Links view={view} setView={setView} badges={badges} />
+        </nav>
+        <div className="side-foot">
+          <p className={`side-days${tight}`} title="Days until your 15 November offer date">
+            <b>{daysLeft}</b>
+            <span className="nav-label">days to your 15 Nov offer date</span>
+          </p>
+          <div className="side-actions">
+            <ThemeButton theme={theme} toggleTheme={toggleTheme} />
             {onSignOut ? (
               <button className="ghost" onClick={onSignOut}>
                 Sign out
               </button>
             ) : null}
           </div>
+        </div>
+      </aside>
+
+      <header className="topbar">
+        <Brand setView={setView} />
+        <div className="topbar-right">
+          <span className={`days-left${tight}`} title="Days until your 15 November offer date">
+            <b>{daysLeft}</b> days left
+          </span>
+          <ThemeButton theme={theme} toggleTheme={toggleTheme} />
+          {onSignOut ? (
+            <button className="ghost" onClick={onSignOut}>
+              Sign out
+            </button>
+          ) : null}
         </div>
       </header>
       <TabBar view={view} setView={setView} badges={badges} />
