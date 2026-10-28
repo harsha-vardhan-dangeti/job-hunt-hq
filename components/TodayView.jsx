@@ -18,7 +18,7 @@ import {
   plusDays,
   today,
 } from './model';
-import { CopyBox, Fit, RunAgent } from './parts';
+import { Fit } from './parts';
 
 function queueReason({ j, kind }) {
   if (kind === 'deadline') return `Deadline ${fmtDate(j.deadline)}`;
@@ -155,46 +155,27 @@ function QueueRow({ item, act, openRole, readOnly }) {
   );
 }
 
-function BriefCard({ brief, agentReady }) {
+/** One line on Today pointing at the full brief, which has its own section. */
+function BriefTeaser({ brief, openBrief }) {
+  const fresh = brief.date === today();
+  const first = brief.todo?.[0];
   return (
-    <section className="card" aria-labelledby="brief-h">
+    <section className="card brief-teaser" aria-labelledby="brief-h">
       <div className="card-head">
         <h2 id="brief-h">Morning brief</h2>
-        <div className="brief-head-right">
-          <span className="eyebrow">{brief.date ? `Written ${fmtDate(brief.date)}` : 'No brief yet'}</span>
-          <RunAgent ready={agentReady} />
-        </div>
+        <span className="eyebrow">
+          {brief.date ? `Written ${fmtDate(brief.date)}${fresh ? '' : ', not refreshed today'}` : 'No brief yet'}
+          {brief.todo?.length ? ` · ${brief.todo.length} to-dos` : ''}
+          {brief.inbox?.length ? ` · ${brief.inbox.length} inbox notes` : ''}
+        </span>
       </div>
-      <div className="brief-grid">
-        <div className="bcell">
-          <h3>To do</h3>
-          <ul>
-            {(brief.todo?.length ? brief.todo : ['The morning agent writes this at 8:30 on weekdays.']).map((t, i) => (
-              <li key={i}>{t}</li>
-            ))}
-          </ul>
-        </div>
-        <div className="bcell">
-          <h3>From your inbox</h3>
-          <ul>
-            {(brief.inbox?.length ? brief.inbox : ['Recruiter mail and application updates show up here.']).map((t, i) => (
-              <li key={i}>{t}</li>
-            ))}
-          </ul>
-        </div>
-        <div className="bcell">
-          <h3>Naukri headline</h3>
-          <CopyBox text={brief.naukri} />
-        </div>
-        <div className="bcell">
-          <h3>Market notes</h3>
-          <p className="notes-body">{brief.notes || 'Nothing yet.'}</p>
-        </div>
-      </div>
+      {first ? <p className="teaser-line">{first}</p> : null}
+      <button className="ghost" style={{ justifySelf: 'start' }} onClick={openBrief}>
+        Read the brief →
+      </button>
     </section>
   );
 }
-
 
 function DecideCard({ jobs, act, openRole, readOnly }) {
   const [showAll, setShowAll] = useState(false);
@@ -289,7 +270,7 @@ function DecideCard({ jobs, act, openRole, readOnly }) {
 }
 
 
-export default function TodayView({ jobs, brief, act, openRole, readOnly, agentReady }) {
+export default function TodayView({ jobs, brief, act, openRole, readOnly, openBrief }) {
   const queue = useMemo(() => buildQueue(jobs), [jobs]);
   const sentToday = jobs.filter((j) => j.messagedOn === today()).length;
   const [first, ...rest] = queue;
@@ -335,7 +316,7 @@ export default function TodayView({ jobs, brief, act, openRole, readOnly, agentR
       ) : null}
 
       <DecideCard jobs={jobs} act={act} openRole={openRole} readOnly={readOnly} />
-      <BriefCard brief={brief} agentReady={agentReady} />
+      <BriefTeaser brief={brief} openBrief={openBrief} />
     </>
   );
 }

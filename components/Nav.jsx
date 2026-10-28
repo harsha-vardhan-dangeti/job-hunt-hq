@@ -1,15 +1,19 @@
 const ICONS = {
   today: 'M12 3v2M12 19v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M3 12h2M19 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z',
+  brief: 'M6 3h9l4 4v14H6zM14 3v5h5M9 12h7M9 16h5',
   pipeline: 'M4 4h4v16H4zM10 4h4v10h-4zM16 4h4v6h-4z',
   roles: 'M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01',
+  resumes: 'M4 5h16v14H4zM9 8a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM6.5 16c.6-1.4 1.5-2 2.5-2s1.9.6 2.5 2M14 10h3M14 14h3',
   insights: 'M4 20V10M10 20V4M16 20v-7M22 20H2',
   activity: 'M12 7v5l3 2M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z',
 };
 
 export const VIEWS = [
   ['today', 'Today'],
+  ['brief', 'Brief'],
   ['pipeline', 'Pipeline'],
   ['roles', 'Roles'],
+  ['resumes', 'Resumes'],
   ['insights', 'Insights'],
   ['activity', 'Activity'],
 ];

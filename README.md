@@ -105,7 +105,7 @@ for checking the UI, useless for tracking anything.
 
 ## What's on the page
 
-Five sections, in the top bar on desktop and a bottom tab bar on phones (keys 1–5 switch,
+Seven sections, in the top bar on desktop and a bottom tab bar on phones (keys 1–7 switch,
 `/` searches). Click any role anywhere to open its panel: a stage tracker you can click to
 move it, what it needs next, its full history, and every field.
 
@@ -115,6 +115,14 @@ move it, what it needs next, its full history, and every field.
   Every one-click action has an Undo.
 - **Decide or drop** — rows whose deadline has passed, and wishlist rows untouched for 10+ days.
   Do now, snooze 3 days, or drop.
+- **Brief** — the agent's morning brief on its own page, sized for reading: to-dos in order,
+  inbox notes, the Naukri headline and market notes.
+- **Resumes** — a resume tailored to each fit-4+ role, built only from the master resume you
+  paste in once. The agent puts the matching experience first in the role's own words, lists what
+  the role asks for that you don't have as gaps (left out, never claimed), and the page flags any
+  employer, title, skill or number that isn't in the master. Download PDF prints a clean,
+  single-column page that applicant-tracking systems can read. The agent tailors up to three each
+  morning; **Tailor resume** on a role asks for one right away.
 - **Insights** — sent this week against the 12-a-week target, your daily streak, a 14-day chart of
   messages sent and applications, and the funnel with its weakest step called out.
 
@@ -134,6 +142,9 @@ session. Without either it returns 401.
 | `DELETE` | `/api/jobs/{id}` | remove a row |
 | `GET` | `/api/brief` | today's brief |
 | `PUT` | `/api/brief` | replace today's brief |
+| `GET` | `/api/resume` | the master resume, `{text, updatedOn}` |
+| `PUT` | `/api/resume` | replace the master resume |
+| `POST` | `/api/agent/run` | start the agent; with `{"jobId": "…"}` it only tailors that role's resume |
 | `POST` | `/api/seed` | one-time import of `seed/*.json` |
 
 ```bash
@@ -148,7 +159,8 @@ curl -X PATCH https://<app>.vercel.app/api/jobs/databricks-ai-engineer-fde \
 
 `company`, `role`, `jobId`, `url`, `status`, `fit` (1–5), `source`, `addedOn`, `postedOn`,
 `contact`, `contactUrl`, `messagedOn`, `followUpOn`, `deadline`, `interviewAt`, `draft`,
-`prepBrief`, `notes`, `snoozedUntil`, `pinnedOn`.
+`prepBrief`, `notes`, `snoozedUntil`, `pinnedOn`, `jd` (the job description), `resume` (the
+tailored resume), `resumeRequestedOn`.
 
 `snoozedUntil` hides a row from Today and Decide-or-drop until that date. `pinnedOn` is set by
 "Do now" and puts the row at the top of Today until a message is sent.
@@ -209,12 +221,16 @@ app/
   api/jobs/route.js     list + create
   api/jobs/[id]/route.js  update + delete
   api/brief/route.js    read + replace the brief
+  api/resume/route.js   read + replace the master resume
   api/seed/route.js     one-time import
   api/auth/route.js     sign in / out
 components/
   Tracker.jsx           app shell: nav, sections, role panel, undo toast
   Nav.jsx               top bar on desktop, bottom tab bar on phones
-  TodayView.jsx         next move, the rest of the queue, decide or drop, brief
+  TodayView.jsx         next move, the rest of the queue, decide or drop, link to the brief
+  BriefView.jsx         the morning brief, full page
+  ResumesView.jsx       master resume, tailored resume per role, fact check, PDF
+  resume.js             which roles need a resume, the fact check, plain-text export
   ListViews.jsx         filters, Pipeline board (drag to change stage), Roles table
   RoleDrawer.jsx        one role: stage tracker, next step, history, all fields
   InsightsView.jsx      pace, weekly target, streak, chart, funnel, sources

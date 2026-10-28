@@ -16,6 +16,7 @@ import {
   roleTimeline,
 } from './model';
 import { Fit } from './parts';
+import { factCheck, resumeState } from './resume';
 
 const SECTIONS = [
   [
@@ -142,8 +143,61 @@ function NextStep({ j, act, readOnly }) {
   );
 }
 
+/** Where this role's tailored resume stands, with the way to it. */
+function ResumeLine({ j, master, agentReady, readOnly, tailor, openResume }) {
+  const st = resumeState(j, master);
+  const r = j.resume;
+  const noMaster = !master?.text?.trim();
+  const flagged = r ? factCheck(r, master?.text).length : 0;
+  let text;
+  if (st === 'requested') text = 'The agent is tailoring a resume for this role.';
+  else if (st === 'stalled') text = "The last tailoring request didn't finish.";
+  else if (!r) text = noMaster ? 'Add your master resume to tailor one for this role.' : 'No tailored resume yet.';
+  else
+    text = `Tailored ${fmtDate(r.generatedOn)}: ${(r.match?.covered || []).length} of the role's asks matched, ${
+      (r.match?.gaps || []).length
+    } gaps${flagged ? `, ${flagged} items to check` : ''}${st === 'stale' ? '. Your master resume has changed since' : ''}.`;
+  return (
+    <div className="resume-line">
+      <div>
+        <span className="small muted">Resume for this role</span>
+        <p>{text}</p>
+      </div>
+      <div className="next-step-actions">
+        {r || noMaster ? (
+          <button className={r ? 'primary' : 'ghost'} onClick={() => openResume(j.id)}>
+            {r ? 'Open resume' : 'Add master resume'}
+          </button>
+        ) : null}
+        {!noMaster && st !== 'requested' ? (
+          <button
+            className={r ? 'ghost' : 'primary'}
+            disabled={readOnly || !agentReady}
+            title={agentReady ? undefined : 'Connect the agent first'}
+            onClick={() => tailor(j)}
+          >
+            {r ? 'Tailor again' : 'Tailor resume'}
+          </button>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 /** Side panel for one role: where it stands, what's next, its history, and every field. */
-export default function RoleDrawer({ j, pageEvents, act, save, readOnly, onClose, onDeleted }) {
+export default function RoleDrawer({
+  j,
+  pageEvents,
+  act,
+  save,
+  readOnly,
+  master,
+  agentReady,
+  tailor,
+  openResume,
+  onClose,
+  onDeleted,
+}) {
   // Only fields the person has changed live here, so agent or one-click updates
   // to other fields show through instead of being overwritten on save.
   const [edits, setEdits] = useState({});
@@ -252,6 +306,14 @@ export default function RoleDrawer({ j, pageEvents, act, save, readOnly, onClose
         <div className="drawer-body">
           <Stepper j={j} act={act} readOnly={readOnly} />
           <NextStep j={j} act={act} readOnly={readOnly} />
+          <ResumeLine
+            j={j}
+            master={master}
+            agentReady={agentReady}
+            readOnly={readOnly}
+            tailor={tailor}
+            openResume={openResume}
+          />
 
           <form id="role-form" onSubmit={onSave} className="drawer-form">
             <section className="dsec">
@@ -313,6 +375,17 @@ export default function RoleDrawer({ j, pageEvents, act, save, readOnly, onClose
                 className="tall"
                 value={value('notes')}
                 onChange={(e) => set('notes', e.target.value)}
+              />
+            </section>
+
+            <section className="dsec">
+              <h3>Job description</h3>
+              <textarea
+                aria-label="Job description"
+                className="tall"
+                placeholder="Paste the job description and the resume is tailored to it. Left empty, the agent reads the posting link."
+                value={value('jd')}
+                onChange={(e) => set('jd', e.target.value)}
               />
             </section>
 

@@ -2,18 +2,31 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import ActivityView from './ActivityView';
+import BriefView from './BriefView';
 import InsightsView from './InsightsView';
 import { DEFAULT_FILTERS, Filters, PipelineView, RolesView, applyFilters, countBy } from './ListViews';
-import { buildQueue, daysLeft } from './model';
+import { buildQueue, daysLeft, today } from './model';
 import Nav, { VIEWS } from './Nav';
+import ResumesView from './ResumesView';
 import RoleDrawer from './RoleDrawer';
 import TodayView from './TodayView';
 
 const VIEW_KEYS = VIEWS.map(([k]) => k);
 
-export default function Tracker({ initialJobs, initialBrief, events = [], readOnly, loadError, agentReady, gated }) {
+export default function Tracker({
+  initialJobs,
+  initialBrief,
+  initialResume,
+  events = [],
+  readOnly,
+  loadError,
+  agentReady,
+  gated,
+}) {
   const [jobs, setJobs] = useState(initialJobs || []);
   const [brief] = useState(initialBrief || {});
+  const [master, setMaster] = useState(initialResume || {});
+  const [resumeId, setResumeId] = useState(null);
   const [view, setViewState] = useState('today');
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
   const [openId, setOpenId] = useState(null);
@@ -71,7 +84,7 @@ export default function Tracker({ initialJobs, initialBrief, events = [], readOn
     }
   }
 
-  /* Keyboard: "/" searches roles, 1–5 switch sections. */
+  /* Keyboard: "/" searches roles, number keys switch sections. */
   useEffect(() => {
     function onKey(e) {
       const typing = ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName);
@@ -152,6 +165,36 @@ export default function Tracker({ initialJobs, initialBrief, events = [], readOn
     setOpenId(saved.id);
   }
 
+  /** Ask the agent to tailor this role's resume now. */
+  async function tailor(j) {
+    if (
+      !window.confirm(
+        `Tailor a resume for ${j.company}?\n\nThe agent reads the job description and writes a resume from your master resume only. It takes a few minutes; reload afterwards.`
+      )
+    )
+      return;
+    try {
+      const res = await fetch('/api/agent/run', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ jobId: j.id }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error || `Couldn't start the agent (${res.status})`);
+      const at = body.requestedAt || new Date().toISOString();
+      setJobs((prev) => prev.map((x) => (x.id === j.id ? { ...x, resumeRequestedOn: at } : x)));
+      showToast({ text: `Tailoring the ${j.company} resume. Reload in a few minutes.` });
+    } catch (e) {
+      showToast({ text: e.message, error: true });
+    }
+  }
+
+  function openResume(id) {
+    setResumeId(id);
+    setOpenId(null);
+    setView('resumes');
+  }
+
   async function signOut() {
     await fetch('/api/auth', { method: 'DELETE' }).catch(() => {});
     window.location.replace('/login');
@@ -174,8 +217,9 @@ export default function Tracker({ initialJobs, initialBrief, events = [], readOn
   const badges = useMemo(() => {
     if (!mounted) return {};
     const urgent = buildQueue(jobs).filter((i) => i.kind !== 'send' && i.kind !== 'pinned').length;
-    return { today: urgent || null, roles: counts.open || null };
-  }, [jobs, counts, mounted]);
+    const fresh = brief.date === today() ? brief.todo?.length : 0;
+    return { today: urgent || null, brief: fresh || null, roles: counts.open || null };
+  }, [jobs, counts, mounted, brief]);
 
   const openJob = openId ? jobs.find((j) => j.id === openId) : null;
   const filterProps = { filters, setFilters, counts, searchRef, onAdd: addRow, readOnly };
@@ -214,6 +258,20 @@ export default function Tracker({ initialJobs, initialBrief, events = [], readOn
             jobs={jobs}
             brief={brief}
             act={act}
+            openRole={setOpenId}
+            readOnly={readOnly}
+            openBrief={() => setView('brief')}
+          />
+        ) : view === 'brief' ? (
+          <BriefView brief={brief} agentReady={agentReady} />
+        ) : view === 'resumes' ? (
+          <ResumesView
+            jobs={jobs}
+            master={master}
+            setMaster={setMaster}
+            selectedId={resumeId}
+            setSelectedId={setResumeId}
+            tailor={tailor}
             openRole={setOpenId}
             readOnly={readOnly}
             agentReady={agentReady}
@@ -259,6 +317,10 @@ export default function Tracker({ initialJobs, initialBrief, events = [], readOn
           act={act}
           save={save}
           readOnly={readOnly}
+          master={master}
+          agentReady={agentReady}
+          tailor={tailor}
+          openResume={openResume}
           onClose={() => setOpenId(null)}
           onDeleted={(id) => {
             setJobs((prev) => prev.filter((j) => j.id !== id));
