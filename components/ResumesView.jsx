@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import { fmtDate } from './model';
 import { Fit } from './parts';
-import { JD_SOURCE, factCheck, resumeState, resumeText, wantsResume } from './resume';
+import { ATS_TARGET } from './ats';
+import { JD_SOURCE, atsFor, factCheck, resumeState, resumeText, wantsResume } from './resume';
 
 const STATE_TEXT = {
   ready: 'Tailored',
@@ -95,7 +96,7 @@ function MasterCard({ master, setMaster, readOnly }) {
   );
 }
 
-function RoleRow({ j, st, selected, onSelect }) {
+function RoleRow({ j, st, score, selected, onSelect }) {
   return (
     <li>
       <button className={`rrow${selected ? ' on' : ''}`} onClick={() => onSelect(j.id)} aria-pressed={selected}>
@@ -105,6 +106,11 @@ function RoleRow({ j, st, selected, onSelect }) {
         </span>
         <span className="rrow-meta">
           <Fit n={j.fit} />
+          {score != null ? (
+            <span className={`ats-tag ${score >= ATS_TARGET ? 'ok' : 'warn'}`} title="ATS score">
+              ATS {score}
+            </span>
+          ) : null}
           <span className={`rstate r-${st}`}>{STATE_TEXT[st]}</span>
         </span>
       </button>
@@ -199,11 +205,103 @@ function Doc({ r }) {
   );
 }
 
+const pts = (n) => `+${Math.round(n)}`;
+
+function Chips({ items, kind, points }) {
+  return (
+    <div className="chips">
+      {items.map((k) => (
+        <span key={k.term || k} className={`kchip ${kind}`}>
+          {k.term || k}
+          {points && k.points >= 0.5 ? <small> {pts(k.points)}</small> : null}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+/** The ATS score for the tailored resume, what makes it up, and what would
+ *  raise it without adding anything untrue. */
+function AtsBlock({ s, base }) {
+  const meets = s.score >= ATS_TARGET;
+  const addable = s.missing.filter((m) => m.inMaster);
+  const needsMaster = s.missing.filter((m) => !m.inMaster);
+  return (
+    <div className={`rail-block ats ${meets ? 'ok' : 'warn'}`}>
+      <h3>ATS score</h3>
+      <p className="ats-num">
+        <b>{s.score}</b>
+        <span>/ 100</span>
+      </p>
+      <p className="small">
+        {meets ? `Meets the ${ATS_TARGET} target.` : `${ATS_TARGET - s.score} below the ${ATS_TARGET} target.`}
+        {base ? ` Your master resume on its own scores ${base.score}.` : ''}
+      </p>
+      <ul className="ats-parts">
+        {s.parts.map((p) => (
+          <li key={p.label}>
+            <span>{p.label}</span>
+            <b>
+              {p.got}/{p.max}
+            </b>
+            <i className="meter" aria-hidden="true">
+              <i style={{ width: `${(100 * p.got) / p.max}%` }} />
+            </i>
+          </li>
+        ))}
+      </ul>
+      {addable.length ? (
+        <>
+          <p className="small">
+            <b>Your master has these, but this resume doesn&apos;t say them.</b> Tailor again to add them.
+          </p>
+          <Chips items={addable} kind="ok" points />
+        </>
+      ) : null}
+      {needsMaster.length ? (
+        <>
+          <p className="small">
+            <b>The role asks for these and your master doesn&apos;t mention them.</b>{' '}
+            {meets ? '' : `They're why this is under ${ATS_TARGET}. `}If one is true, add it to your master resume, then
+            tailor again.
+          </p>
+          <Chips items={needsMaster} kind="warn" points />
+        </>
+      ) : null}
+      {s.unbacked.length ? (
+        <>
+          <p className="small">
+            <b>Not counted:</b> in this resume but not in your master.
+          </p>
+          <Chips items={s.unbacked} kind="bad" />
+        </>
+      ) : null}
+      <details className="ats-checks">
+        <summary>Layout checks</summary>
+        <ul>
+          {s.checks.map((c) => (
+            <li key={c.label} className={c.ok ? 'ok' : 'warn'}>
+              {c.ok ? '✓' : '✗'} {c.label}
+            </li>
+          ))}
+          {s.title.missing.length ? (
+            <li className="warn">
+              ✗ Job title words your master doesn&apos;t use: {s.title.missing.join(', ')}
+            </li>
+          ) : null}
+        </ul>
+      </details>
+    </div>
+  );
+}
+
 function Viewer({ j, master, tailor, openRole, readOnly, agentReady }) {
   const [copied, setCopied] = useState('');
   const r = j.resume;
   const st = resumeState(j, master);
   const unverified = useMemo(() => factCheck(r, master.text), [r, master.text]);
+  const ats = useMemo(() => atsFor(j, master.text), [j, master.text]);
+  const hasJd = Boolean(j.jd?.trim());
   const canTailor = agentReady && !readOnly && Boolean(master.text?.trim()) && st !== 'requested';
 
   function download() {
@@ -283,6 +381,23 @@ function Viewer({ j, master, tailor, openRole, readOnly, agentReady }) {
         <div className="viewer-body">
           <Doc r={r} />
           <aside className="viewer-rail" aria-label="How this resume fits the role">
+            {ats.tailored ? (
+              <AtsBlock s={ats.tailored} base={ats.master} />
+            ) : master.text?.trim() ? (
+              <div className="rail-block ats warn">
+                <h3>No ATS score yet</h3>
+                <p className="small">
+                  {hasJd
+                    ? "The job description doesn't name any skills the scorer knows, so there's nothing to match against."
+                    : "The score needs the job description. Paste it in the role's Job description box."}
+                </p>
+                {!hasJd ? (
+                  <button className="ghost" onClick={() => openRole(j.id)}>
+                    Add job description
+                  </button>
+                ) : null}
+              </div>
+            ) : null}
             {!master.text?.trim() ? (
               <div className="rail-block check warn">
                 <h3>Can&apos;t check facts yet</h3>
@@ -365,6 +480,14 @@ function Viewer({ j, master, tailor, openRole, readOnly, agentReady }) {
               ? 'Tailor resume asks the agent to write one for this role. It takes a few minutes.'
               : 'Add your master resume above first. Every tailored resume is built from it.'}
           </p>
+          {ats.master ? (
+            <p>
+              Your master resume on its own has an ATS score of <b>{ats.master.score}</b> for this role. A tailored
+              resume aims for {ATS_TARGET}.
+            </p>
+          ) : master.text?.trim() && !hasJd ? (
+            <p className="muted">Add the job description to the role to see an ATS score.</p>
+          ) : null}
         </div>
       )}
     </section>
@@ -383,7 +506,11 @@ export default function ResumesView({
   agentReady,
 }) {
   const groups = useMemo(() => {
-    const withState = jobs.map((j) => ({ j, st: resumeState(j, master) }));
+    const withState = jobs.map((j) => ({
+      j,
+      st: resumeState(j, master),
+      score: j.resume ? (atsFor(j, master.text).tailored?.score ?? null) : null,
+    }));
     const byFit = (a, b) => (Number(b.j.fit) || 0) - (Number(a.j.fit) || 0) || a.j.company.localeCompare(b.j.company);
     return {
       working: withState.filter((x) => x.st === 'requested' || x.st === 'stalled').sort(byFit),
@@ -405,8 +532,8 @@ export default function ResumesView({
         </h3>
         {note ? <p className="muted small">{note}</p> : null}
         <ul>
-          {items.map(({ j, st }) => (
-            <RoleRow key={j.id} j={j} st={st} selected={pick?.id === j.id} onSelect={setSelectedId} />
+          {items.map(({ j, st, score }) => (
+            <RoleRow key={j.id} j={j} st={st} score={score} selected={pick?.id === j.id} onSelect={setSelectedId} />
           ))}
         </ul>
       </div>

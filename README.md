@@ -123,6 +123,11 @@ move it, what it needs next, its full history, and every field.
   employer, title, skill or number that isn't in the master. Download PDF prints a clean,
   single-column page that applicant-tracking systems can read. The agent tailors up to three each
   morning; **Tailor resume** on a role asks for one right away.
+  Each tailored resume gets an **ATS score** out of 100 against the role's job description:
+  keywords (60), job-title words (10), sections (20), length and bullets (10). A keyword only
+  counts if the master resume backs it up, so adding a skill you don't have can't raise it. The
+  agent revises towards 90 using only what the master has; what's left under 90 is listed as
+  keywords to add to the master, if they're true.
 - **Insights** — sent this week against the 12-a-week target, your daily streak, a 14-day chart of
   messages sent and applications, and the funnel with its weakest step called out.
 
@@ -144,6 +149,7 @@ session. Without either it returns 401.
 | `PUT` | `/api/brief` | replace today's brief |
 | `GET` | `/api/resume` | the master resume, `{text, updatedOn}` |
 | `PUT` | `/api/resume` | replace the master resume |
+| `POST` | `/api/ats` | score a resume for a role, `{jobId, resume?, jd?}`; saves nothing |
 | `POST` | `/api/agent/run` | start the agent; with `{"jobId": "…"}` it only tailors that role's resume |
 | `POST` | `/api/seed` | one-time import of `seed/*.json` |
 
@@ -222,15 +228,17 @@ app/
   api/jobs/[id]/route.js  update + delete
   api/brief/route.js    read + replace the brief
   api/resume/route.js   read + replace the master resume
+  api/ats/route.js      ATS score for a draft or saved resume
   api/seed/route.js     one-time import
   api/auth/route.js     sign in / out
 components/
   Tracker.jsx           app shell: nav, sections, role panel, undo toast
-  Nav.jsx               top bar on desktop, bottom tab bar on phones
+  Nav.jsx               sidebar on desktop, icon rail on tablets, tab bar on phones
   TodayView.jsx         next move, the rest of the queue, decide or drop, link to the brief
   BriefView.jsx         the morning brief, full page
-  ResumesView.jsx       master resume, tailored resume per role, fact check, PDF
+  ResumesView.jsx       master resume, tailored resume per role, ATS score, fact check, PDF
   resume.js             which roles need a resume, the fact check, plain-text export
+  ats.js                the ATS score: keywords, title, sections, length
   ListViews.jsx         filters, Pipeline board (drag to change stage), Roles table
   RoleDrawer.jsx        one role: stage tracker, next step, history, all fields
   InsightsView.jsx      pace, weekly target, streak, chart, funnel, sources

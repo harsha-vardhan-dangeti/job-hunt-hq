@@ -3,6 +3,7 @@
    against the master, and turn it into plain text. No React here. */
 
 import { CLOSED } from './model';
+import { atsScore, backedPhrase } from './ats';
 
 /** Open roles worth a tailored resume: fit 4+ and still in play. */
 export function wantsResume(j) {
@@ -47,7 +48,10 @@ export function factCheck(r, masterText) {
 
   const has = (s) => master.includes(norm(s));
 
-  for (const g of r.skills || []) for (const s of g.items || []) if (s && !has(s)) missing.add(s);
+  // A broader name for something the master names (pgvector → Vector databases) is true too.
+  for (const g of r.skills || []) {
+    for (const s of g.items || []) if (s && !has(s) && !backedPhrase(s, masterText)) missing.add(s);
+  }
   for (const x of r.experience || []) {
     if (x.company && !has(x.company)) missing.add(x.company);
     if (x.title && !has(x.title)) missing.add(x.title);
@@ -61,6 +65,17 @@ export function factCheck(r, masterText) {
   ].join(' \n ');
   for (const n of numbersIn(prose)) if (!masterNumbers.has(value(n))) missing.add(n.trim());
   return [...missing];
+}
+
+/** ATS scores for a role against its job description: the tailored resume
+ *  (or a draft passed as `r`) and the master resume on its own. Either is null
+ *  when there's nothing to score. */
+export function atsFor(j, masterText, r = j.resume) {
+  const args = { jd: j.jd, role: j.role, master: masterText || '' };
+  return {
+    tailored: r && masterText ? atsScore({ ...args, text: resumeText(r) }) : null,
+    master: masterText ? atsScore({ ...args, text: masterText }) : null,
+  };
 }
 
 /** Plain text, one fact per line, for pasting into an application form. */
