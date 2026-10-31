@@ -295,7 +295,7 @@ function AtsBlock({ s, base }) {
             <b>
               {p.got}/{p.max}
             </b>
-            <i className="meter" aria-hidden="true">
+            <i className="ats-meter" aria-hidden="true">
               <i style={{ width: `${(100 * p.got) / p.max}%` }} />
             </i>
           </li>
@@ -572,6 +572,15 @@ export default function ResumesView({
     };
   }, [jobs, master]);
 
+  // When the list sits above the resume (phones, iPad portrait), picking a
+  // role scrolls down to it instead of leaving it off screen.
+  function select(id) {
+    setSelectedId(id);
+    if (window.matchMedia('(max-width: 960px)').matches) {
+      requestAnimationFrame(() => document.querySelector('.viewer')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+    }
+  }
+
   const pick =
     jobs.find((j) => j.id === selectedId) || groups.done[0]?.j || groups.working[0]?.j || groups.todo[0]?.j || null;
 
@@ -584,7 +593,7 @@ export default function ResumesView({
         {note ? <p className="muted small">{note}</p> : null}
         <ul>
           {items.map(({ j, st, score }) => (
-            <RoleRow key={j.id} j={j} st={st} score={score} selected={pick?.id === j.id} onSelect={setSelectedId} />
+            <RoleRow key={j.id} j={j} st={st} score={score} selected={pick?.id === j.id} onSelect={select} />
           ))}
         </ul>
       </div>

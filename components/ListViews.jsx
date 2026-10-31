@@ -124,10 +124,15 @@ function cardHint(j) {
   return { text: '', late: false };
 }
 
-/** The pipeline as columns. Drag a card to another column to move it. */
+/** The pipeline as columns. Drag a card to another column to move it. On
+ *  narrow screens one stage shows at a time, picked from the tabs above it,
+ *  and a card's stage changes from its panel. */
 export function PipelineView({ rows, openRole, act, readOnly }) {
   const [over, setOver] = useState(null);
   const [dragId, setDragId] = useState(null);
+  const [shown, setShown] = useState(null);
+  const count = (status) => rows.filter((j) => j.status === status).length;
+  const active = shown || STAGES.find((s) => count(s) > 0) || STAGES[0];
 
   function drop(status) {
     setOver(null);
@@ -139,13 +144,25 @@ export function PipelineView({ rows, openRole, act, readOnly }) {
 
   return (
     <>
-      <p className="hint">Drag a card into another column to change its stage. Click it to open the role.</p>
+      <p className="hint">
+        <span className="for-mouse">Drag a card into another column to change its stage. Click it to open the role.</span>
+        <span className="for-touch">Tap a card to open it. Change its stage from the tracker at the top.</span>
+      </p>
+      <div className="stage-tabs" role="group" aria-label="Stage">
+        {STAGES.map((status) => (
+          <button key={status} aria-pressed={active === status} onClick={() => setShown(status)}>
+            <span className={`dot s-${status}`} aria-hidden="true" />
+            {LABEL[status]}
+            <b>{count(status)}</b>
+          </button>
+        ))}
+      </div>
       <div className="board">
         {STAGES.map((status) => {
           const items = rows.filter((j) => j.status === status);
           return (
             <section
-              className={`col${over === status ? ' over' : ''}`}
+              className={`col${over === status ? ' over' : ''}${active === status ? ' active' : ''}`}
               key={status}
               aria-label={LABEL[status]}
               onDragOver={(e) => {
@@ -207,15 +224,15 @@ export function PipelineView({ rows, openRole, act, readOnly }) {
 export function RolesView({ rows, total, openRole }) {
   return (
     <div className="tablebox">
-      <table>
+      <table className="roles-table">
         <thead>
           <tr>
             <th>Company and role</th>
             <th>Stage</th>
-            <th>Fit</th>
-            <th>Next step</th>
-            <th>Updated</th>
-            <th>Source</th>
+            <th className="c-fit">Fit</th>
+            <th className="c-next">Next step</th>
+            <th className="c-updated">Updated</th>
+            <th className="c-source">Source</th>
           </tr>
         </thead>
         <tbody>
@@ -248,12 +265,12 @@ export function RolesView({ rows, total, openRole }) {
                   <td>
                     <span className={`chip s-${j.status}`}>{LABEL[j.status] || j.status}</span>
                   </td>
-                  <td>
+                  <td className="c-fit">
                     <Fit n={j.fit} />
                   </td>
-                  <td className={late ? 'late' : ''}>{nextStepText(j)}</td>
-                  <td className="num-text">{fmtDate(j.updatedOn)}</td>
-                  <td className="role">{sourceName(j)}</td>
+                  <td className={`c-next${late ? ' late' : ''}`}>{nextStepText(j)}</td>
+                  <td className="num-text c-updated">{fmtDate(j.updatedOn)}</td>
+                  <td className="role c-source">{sourceName(j)}</td>
                 </tr>
               );
             })

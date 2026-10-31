@@ -125,6 +125,12 @@ h3 { font-weight: 600; font-size: 13px; line-height: 1.3; color: var(--ink); }
   border-right: 1px solid var(--line);
   overflow-y: auto;
 }
+/* Phones in landscape: keep clear of the notch. */
+@supports (padding: max(0px)) {
+  .sidebar { width: calc(var(--side-w) + env(safe-area-inset-left)); padding-left: max(14px, env(safe-area-inset-left)); }
+  body:has(.sidebar) { padding-left: calc(var(--side-w) + env(safe-area-inset-left)); }
+  .wrap { padding-right: max(24px, env(safe-area-inset-right)); }
+}
 .brand {
   display: inline-flex;
   align-items: center;
@@ -542,7 +548,7 @@ textarea.master-text { min-height: 420px; font-size: 14px; line-height: 1.6; }
 .rstate.r-stale, .rstate.r-stalled { color: var(--warn); }
 .rstate.r-requested { color: var(--accent); }
 
-.viewer { display: grid; gap: 16px; min-width: 0; }
+.viewer { display: grid; gap: 16px; min-width: 0; scroll-margin-top: calc(var(--topbar-h) + 12px); }
 .viewer-head { display: flex; justify-content: space-between; align-items: start; gap: 14px; flex-wrap: wrap; }
 .viewer-head h2 { font-size: 22px; }
 .viewer-role { margin: 2px 0 0; color: var(--muted); font-size: 15px; }
@@ -588,8 +594,8 @@ textarea.master-text { min-height: 420px; font-size: 14px; line-height: 1.6; }
 .ats-parts { list-style: none; margin: 4px 0; padding: 0; display: grid; gap: 9px; font-size: 12.5px; }
 .ats-parts li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 8px; }
 .ats-parts b { font-variant-numeric: tabular-nums; }
-.meter { grid-column: 1 / -1; display: block; height: 4px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
-.meter i { display: block; height: 100%; background: var(--accent); }
+.ats-meter { grid-column: 1 / -1; display: block; height: 4px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+.ats-meter i { display: block; height: 100%; background: var(--accent); }
 .kchip small { font-size: 11px; font-weight: 700; opacity: 0.85; }
 .ats-checks summary { cursor: pointer; font-weight: 600; font-size: 13px; }
 .ats-checks ul { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 4px; font-size: 12.5px; }
@@ -1102,9 +1108,59 @@ table.mini th, table.mini td { padding: 4px 14px 4px 0; position: static; }
 
 /* ---------- narrow screens ---------- */
 
+/* Pipeline stage tabs: only where the board shows one stage at a time. */
+.stage-tabs { display: none; }
+.for-touch { display: none; }
+@media (max-width: 1023px), (pointer: coarse) {
+  .for-mouse { display: none; }
+  .for-touch { display: inline; }
+}
+
+/* Touch screens: fingers need bigger targets than a pointer, and iOS zooms
+   into any field whose text is under 16px. */
+@media (pointer: coarse) {
+  input, select, textarea { font-size: 16px; }
+  input:not([type='checkbox']):not([type='radio']), select { min-height: 44px; }
+  button.primary, button.ghost, .stat { min-height: 44px; }
+  .stat { align-items: center; }
+  .icon-btn { width: 44px; height: 44px; }
+  .side-nav a { min-height: 44px; }
+  /* Grow the tap area of text links without moving the layout. */
+  .linklike, .qlink { padding-block: 10px; margin-block: -10px; }
+}
+
 @media (max-width: 1180px) {
   .viewer-body { grid-template-columns: minmax(0, 1fr); }
-  .viewer-rail { position: static; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+  /* Stacked: the score and checks come before the resume, not after it. */
+  .viewer-rail { position: static; order: -1; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+}
+
+@media (max-width: 1023px) {
+  .stage-tabs { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+  .stage-tabs::-webkit-scrollbar { display: none; }
+  .stage-tabs button {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-height: 40px;
+    padding: 0 14px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--ink);
+    font: 500 13px var(--body);
+    cursor: pointer;
+  }
+  .stage-tabs button[aria-pressed='true'] { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+  .stage-tabs b { font: 600 13px var(--display); color: var(--muted); }
+  .board { display: block; overflow: visible; }
+  .board .col { background: none; border: 0; padding: 0; }
+  .board .col:not(.active), .board .col-head { display: none; }
+  .board .col-body { max-height: none; overflow: visible; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+  .jcard { padding: 12px 14px; }
+  table.roles-table { min-width: 0; }
+  .roles-table .c-source, .roles-table tr.row td.c-source { display: none; }
 }
 
 @media (max-width: 960px) {
@@ -1237,6 +1293,24 @@ table.mini th, table.mini td { padding: 4px 14px 4px 0; position: static; }
   .blist:not(.plain) .bitem:first-child .bnum { font-size: 26px; }
   .resume-doc { padding: 24px 18px; }
   textarea.master-text { min-height: 300px; }
+  /* Roles: each row becomes a card, company and stage on top, next step and fit below. */
+  .roles-table thead { display: none; }
+  .roles-table, .roles-table tbody { display: block; }
+  .roles-table tr.row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 6px 12px;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--line);
+  }
+  .roles-table tr.row:last-child { border-bottom: 0; }
+  .roles-table tr.row td { display: block; padding: 0; border: 0; }
+  .roles-table tr.row td:nth-child(2) { justify-self: end; }
+  .roles-table tr.row .c-next { grid-column: 1; grid-row: 2; font-size: 13px; }
+  .roles-table tr.row .c-fit { grid-column: 2; grid-row: 2; justify-self: end; }
+  .roles-table tr.row td.c-updated { display: none; }
+  .topbar { padding-left: max(16px, env(safe-area-inset-left)); padding-right: max(16px, env(safe-area-inset-right)); }
+  .wrap { padding-left: max(16px, env(safe-area-inset-left)); padding-right: max(16px, env(safe-area-inset-right)); }
 }
 
 @media (max-width: 380px) {
