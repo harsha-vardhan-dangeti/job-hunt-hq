@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { fmtDate } from './model';
 import { Fit } from './parts';
 import { ATS_TARGET } from './ats';
-import { JD_SOURCE, atsFor, factCheck, resumeState, resumeText, wantsResume } from './resume';
+import { JD_SOURCE, atsFor, factCheck, resumeState, resumeText, wantsJd, wantsResume } from './resume';
 
 const STATE_TEXT = {
   ready: 'Tailored',
@@ -96,6 +96,52 @@ function MasterCard({ master, setMaster, readOnly }) {
   );
 }
 
+/** How many roles still lack a job description, and a way to have the agent read them. */
+function JdStatus({ jobs, agentReady, readOnly }) {
+  const [state, setState] = useState({ busy: false, msg: '', error: false });
+  const missing = jobs.filter(wantsJd).length;
+  const open = jobs.filter(wantsResume).length;
+
+  async function fetchJds() {
+    if (
+      !window.confirm(
+        `Have the agent read the missing job descriptions now?\n\nIt only reads postings, from Indeed, the careers sites it can reach and recruiter emails. It takes a few minutes; reload afterwards.`
+      )
+    )
+      return;
+    setState({ busy: true, msg: '', error: false });
+    try {
+      const res = await fetch('/api/agent/run', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ task: 'jds' }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error || `Couldn't start the agent (${res.status})`);
+      setState({ busy: false, msg: 'Reading job descriptions. Reload in a few minutes.', error: false });
+    } catch (e) {
+      setState({ busy: false, msg: e.message, error: true });
+    }
+  }
+
+  if (!open) return null;
+  return (
+    <div className="jd-status">
+      <p className="small">
+        {missing
+          ? `${open - missing} of ${open} roles have a job description. The other ${missing} can't get an ATS score until they do.`
+          : `All ${open} roles have a job description.`}
+      </p>
+      {missing ? (
+        <button className="ghost" onClick={fetchJds} disabled={!agentReady || readOnly || state.busy}>
+          {state.busy ? 'Starting…' : 'Fetch missing job descriptions'}
+        </button>
+      ) : null}
+      {state.msg ? <span className={`saved${state.error ? ' err' : ''}`}>{state.msg}</span> : null}
+    </div>
+  );
+}
+
 function RoleRow({ j, st, score, selected, onSelect }) {
   return (
     <li>
@@ -106,6 +152,11 @@ function RoleRow({ j, st, score, selected, onSelect }) {
         </span>
         <span className="rrow-meta">
           <Fit n={j.fit} />
+          {!j.jd?.trim() ? (
+            <span className="ats-tag none" title="No job description yet, so no ATS score">
+              No JD
+            </span>
+          ) : null}
           {score != null ? (
             <span className={`ats-tag ${score >= ATS_TARGET ? 'ok' : 'warn'}`} title="ATS score">
               ATS {score}
@@ -553,6 +604,7 @@ export default function ResumesView({
 
       <div className="resume-layout">
         <nav className="card rlist" aria-label="Roles">
+          <JdStatus jobs={jobs} agentReady={agentReady} readOnly={readOnly} />
           {list('Being written', groups.working)}
           {list('Tailored', groups.done)}
           {list(

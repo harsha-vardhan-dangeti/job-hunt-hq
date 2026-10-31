@@ -127,7 +127,9 @@ move it, what it needs next, its full history, and every field.
   keywords (60), job-title words (10), sections (20), length and bullets (10). A keyword only
   counts if the master resume backs it up, so adding a skill you don't have can't raise it. The
   agent revises towards 90 using only what the master has; what's left under 90 is listed as
-  keywords to add to the master, if they're true.
+  keywords to add to the master, if they're true. The agent saves each role's job description
+  as it adds the role, fills in missing ones each morning, and **Fetch missing job descriptions**
+  asks for them right away. A description you paste into a role is never replaced.
 - **Insights** — sent this week against the 12-a-week target, your daily streak, a 14-day chart of
   messages sent and applications, and the funnel with its weakest step called out.
 
@@ -150,7 +152,7 @@ session. Without either it returns 401.
 | `GET` | `/api/resume` | the master resume, `{text, updatedOn}` |
 | `PUT` | `/api/resume` | replace the master resume |
 | `POST` | `/api/ats` | score a resume for a role, `{jobId, resume?, jd?}`; saves nothing |
-| `POST` | `/api/agent/run` | start the agent; with `{"jobId": "…"}` it only tailors that role's resume |
+| `POST` | `/api/agent/run` | start the agent; with `{"jobId": "…"}` it only tailors that role's resume, with `{"task": "jds"}` it only reads missing job descriptions |
 | `POST` | `/api/seed` | one-time import of `seed/*.json` |
 
 ```bash
@@ -165,7 +167,8 @@ curl -X PATCH https://<app>.vercel.app/api/jobs/databricks-ai-engineer-fde \
 
 `company`, `role`, `jobId`, `url`, `status`, `fit` (1–5), `source`, `addedOn`, `postedOn`,
 `contact`, `contactUrl`, `messagedOn`, `followUpOn`, `deadline`, `interviewAt`, `draft`,
-`prepBrief`, `notes`, `snoozedUntil`, `pinnedOn`, `jd` (the job description), `resume` (the
+`prepBrief`, `notes`, `snoozedUntil`, `pinnedOn`, `jd` (the job description), `jdSource`
+(`pasted`, `indeed`, `gmail` or `posting`), `jdFetchedOn`, `jdTriedOn`, `resume` (the
 tailored resume), `resumeRequestedOn`.
 
 `snoozedUntil` hides a row from Today and Decide-or-drop until that date. `pinnedOn` is set by

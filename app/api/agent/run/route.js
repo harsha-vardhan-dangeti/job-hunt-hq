@@ -11,8 +11,9 @@ const JOB_ID = /^[a-z0-9][a-z0-9-]{0,119}$/;
  *  the link to watch the run.
  *
  *  Body (optional): {jobId} — instead of the full morning routine, the agent
- *  only tailors the resume for that role. The routine's prompt recognises the
- *  "TAILOR RESUME: <id>" line. */
+ *  only tailors the resume for that role. Or {task: "jds"} — it only reads the
+ *  job descriptions that open roles are missing. The routine's prompt
+ *  recognises the "TAILOR RESUME: <id>" and "FETCH JOB DESCRIPTIONS" lines. */
 export async function POST(request) {
   if (!(await canWrite(request))) return unauthorized();
   if (!agentReady) {
@@ -21,13 +22,18 @@ export async function POST(request) {
       { status: 409 }
     );
   }
-  const { jobId } = await request.json().catch(() => ({}));
+  const { jobId, task } = await request.json().catch(() => ({}));
   if (jobId !== undefined && !JOB_ID.test(String(jobId))) {
     return Response.json({ error: 'Unknown role id.' }, { status: 400 });
   }
+  if (task !== undefined && task !== 'jds') {
+    return Response.json({ error: 'Unknown task.' }, { status: 400 });
+  }
   const text = jobId
     ? `TAILOR RESUME: ${jobId}`
-    : 'Started on demand from the Job Hunt HQ "Run agent now" button.';
+    : task === 'jds'
+      ? 'FETCH JOB DESCRIPTIONS'
+      : 'Started on demand from the Job Hunt HQ "Run agent now" button.';
 
   try {
     const res = await fetch(

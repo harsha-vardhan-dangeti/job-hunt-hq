@@ -598,6 +598,10 @@ textarea.master-text { min-height: 420px; font-size: 14px; line-height: 1.6; }
 .ats-tag { font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .ats-tag.ok { color: var(--ok); }
 .ats-tag.warn { color: var(--warn); }
+.ats-tag.none { color: var(--muted); font-weight: 600; }
+.jd-status { display: grid; gap: 8px; padding: 0 6px 14px; border-bottom: 1px solid var(--line); }
+.jd-status p { margin: 0; color: var(--muted); }
+.jd-status button { justify-self: start; }
 
 /* The resume itself reads as a printed page in both themes. */
 .resume-doc {

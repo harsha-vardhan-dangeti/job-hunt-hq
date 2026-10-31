@@ -14,9 +14,10 @@ import {
   nextStepText,
   plusDays,
   roleTimeline,
+  today,
 } from './model';
 import { Fit } from './parts';
-import { factCheck, resumeState } from './resume';
+import { JD_SOURCE, factCheck, resumeState } from './resume';
 
 const SECTIONS = [
   [
@@ -254,6 +255,8 @@ export default function RoleDrawer({
     e.preventDefault();
     const patch = { ...edits };
     if ('fit' in patch) patch.fit = Math.min(5, Math.max(1, Number(patch.fit) || 3));
+    // A description typed or pasted here is yours, so the agent won't replace it.
+    if ('jd' in patch) Object.assign(patch, { jdSource: patch.jd.trim() ? 'pasted' : '', jdFetchedOn: today() });
     setBusy(true);
     try {
       await save(j.id, patch);
@@ -380,6 +383,17 @@ export default function RoleDrawer({
 
             <section className="dsec">
               <h3>Job description</h3>
+              {j.jd?.trim() && JD_SOURCE[j.jdSource] ? (
+                <p className="muted small">
+                  From {JD_SOURCE[j.jdSource]}
+                  {j.jdFetchedOn ? `, saved ${fmtDate(j.jdFetchedOn)}` : ''}.
+                </p>
+              ) : !j.jd?.trim() && j.jdTriedOn ? (
+                <p className="muted small">
+                  The agent couldn&apos;t read the posting on {fmtDate(j.jdTriedOn)}. Paste it here and the ATS score
+                  can be worked out.
+                </p>
+              ) : null}
               <textarea
                 aria-label="Job description"
                 className="tall"

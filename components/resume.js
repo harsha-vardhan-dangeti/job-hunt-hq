@@ -78,6 +78,12 @@ export function atsFor(j, masterText, r = j.resume) {
   };
 }
 
+/** Open roles that still need their job description read: the ones a resume is
+ *  wanted for, with no description yet. */
+export function wantsJd(j) {
+  return wantsResume(j) && !j.jd?.trim();
+}
+
 /** Plain text, one fact per line, for pasting into an application form. */
 export function resumeText(r) {
   if (!r) return '';
@@ -129,5 +135,6 @@ export const JD_SOURCE = {
   pasted: 'the job description you pasted',
   posting: 'the job posting',
   indeed: 'the Indeed listing',
+  gmail: "the recruiter's email",
   'title-only': 'the role title and notes only (no job description could be read)',
 };
