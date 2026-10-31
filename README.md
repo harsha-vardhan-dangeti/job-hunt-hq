@@ -121,7 +121,9 @@ move it, what it needs next, its full history, and every field.
   paste in once. The agent puts the matching experience first in the role's own words, lists what
   the role asks for that you don't have as gaps (left out, never claimed), and the page flags any
   employer, title, skill or number that isn't in the master. Download PDF prints a clean,
-  single-column page that applicant-tracking systems can read. The agent tailors up to three each
+  single-column page that applicant-tracking systems can read. **Edit in Overleaf** sends it to
+  Overleaf as LaTeX and opens it as a new project there (Overleaf can't update an existing
+  project, so edits made there stay in Overleaf). The agent tailors up to three each
   morning; **Tailor resume** on a role asks for one right away.
   Each tailored resume gets an **ATS score** out of 100 against the role's job description:
   keywords (60), job-title words (10), sections (20), length and bullets (10). A keyword only
@@ -242,6 +244,7 @@ components/
   ResumesView.jsx       master resume, tailored resume per role, ATS score, fact check, PDF
   resume.js             which roles need a resume, the fact check, plain-text export
   ats.js                the ATS score: keywords, title, sections, length
+  latex.js              the tailored resume as a LaTeX file, sent to Overleaf
   ListViews.jsx         filters, Pipeline board (drag to change stage), Roles table
   RoleDrawer.jsx        one role: stage tracker, next step, history, all fields
   InsightsView.jsx      pace, weekly target, streak, chart, funnel, sources

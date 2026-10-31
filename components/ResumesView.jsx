@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { fmtDate } from './model';
 import { Fit } from './parts';
 import { ATS_TARGET } from './ats';
+import { openInOverleaf } from './latex';
 import { JD_SOURCE, atsFor, factCheck, resumeState, resumeText, wantsJd, wantsResume } from './resume';
 
 const STATE_TEXT = {
@@ -415,6 +416,13 @@ function Viewer({ j, master, tailor, openRole, readOnly, agentReady }) {
             <>
               <button className="primary" onClick={download}>
                 Download PDF
+              </button>
+              <button
+                className="ghost"
+                onClick={() => openInOverleaf(r, [j.company, j.role].filter(Boolean).join(' - '))}
+                title="Opens this resume as a new Overleaf project, in a new tab"
+              >
+                Edit in Overleaf
               </button>
               <button className="ghost" onClick={copy}>
                 {copied || 'Copy as text'}
