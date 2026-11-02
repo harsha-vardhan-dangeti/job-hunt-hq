@@ -272,8 +272,12 @@ export default function Tracker({
           <TodayView
             jobs={jobs}
             brief={brief}
+            events={events}
+            master={master}
+            runs={runs}
             act={act}
             openRole={setOpenId}
+            openResume={openResume}
             readOnly={readOnly}
             openBrief={() => setView('brief')}
           />

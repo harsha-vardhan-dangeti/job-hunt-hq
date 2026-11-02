@@ -109,10 +109,16 @@ Seven sections, in the top bar on desktop and a bottom tab bar on phones (keys 1
 `/` searches). Click any role anywhere to open its panel: a stage tracker you can click to
 move it, what it needs next, its full history, and every field.
 
-- **Today** — up to five things to do now: interviews and live deadlines first, then follow-ups
-  that have come due, roles you pinned, and fit-4+ roles with a draft but no message sent.
-  "Mark sent" sets `messagedOn`, moves the row to `outreach` and books a follow-up in 5 days.
-  Every one-click action has an Undo.
+- **Today** — your pace (messages sent today against 3, this week's messages and applications
+  against 12, interviews in the next 7 days, days to the offer date), what the agent is doing or
+  did today, then up to five things to do now: interviews (with your prep notes) and live
+  deadlines first, interviews that are over and need an outcome (next round, waiting to hear,
+  offer, rejected), follow-ups that have come due, roles you pinned, and fit-4+ roles with a
+  draft but no message sent. "Mark sent" sets `messagedOn`, moves the row to `outreach` and
+  books a follow-up in 5 days. Beside it: **This week** (interviews, deadlines and follow-ups
+  by day), **New roles** the agent added since yesterday, and **Ready to apply**, the roles
+  with a tailored resume not yet applied to, where "Mark applied" sets `status: applied`,
+  `appliedOn` and a follow-up. Every one-click action has an Undo.
 - **Decide or drop** — rows whose deadline has passed, and wishlist rows untouched for 10+ days.
   Do now, snooze 3 days, or drop.
 - **Brief** — the agent's morning brief on its own page, sized for reading: to-dos in order,
@@ -173,10 +179,12 @@ curl -X PATCH https://<app>.vercel.app/api/jobs/databricks-ai-engineer-fde \
 `contact`, `contactUrl`, `messagedOn`, `followUpOn`, `deadline`, `interviewAt`, `draft`,
 `prepBrief`, `notes`, `snoozedUntil`, `pinnedOn`, `jd` (the job description), `jdSource`
 (`pasted`, `indeed`, `gmail` or `posting`), `jdFetchedOn`, `jdTriedOn`, `resume` (the
-tailored resume), `resumeRequestedOn`.
+tailored resume), `resumeRequestedOn`, `appliedOn`, `debriefOn`.
 
 `snoozedUntil` hides a row from Today and Decide-or-drop until that date. `pinnedOn` is set by
-"Do now" and puts the row at the top of Today until a message is sent.
+"Do now" and puts the row at the top of Today until a message is sent. `appliedOn` is the day
+"Mark applied" was clicked, and counts toward the week's pace. `debriefOn` is set by "Waiting to
+hear" after an interview, so Today stops asking how it went until a new interview is booked.
 
 `status` is one of `wishlist`, `outreach`, `applied`, `interviewing`, `offer`, `rejected`,
 `dropped`. Dates are `YYYY-MM-DD`; `interviewAt` is `YYYY-MM-DDTHH:MM` in IST.
@@ -257,7 +265,8 @@ app/
 components/
   Tracker.jsx           app shell: nav, sections, role panel, undo toast
   Nav.jsx               sidebar on desktop, icon rail on tablets, tab bar on phones
-  TodayView.jsx         next move, the rest of the queue, decide or drop, link to the brief
+  TodayView.jsx         pace, agent line, next move, queue, this week, new roles, ready to
+                        apply, decide or drop, link to the brief
   BriefView.jsx         the morning brief, full page
   ResumesView.jsx       master resume, tailored resume per role, ATS score, fact check, PDF
   resume.js             which roles need a resume, the fact check, plain-text export

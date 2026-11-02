@@ -295,3 +295,50 @@ export function AgentPill({ run, onOpen }) {
     </button>
   );
 }
+
+/** One line on Today: what the agent is doing now, or how today's run went. */
+export function AgentLine({ runs, openBrief }) {
+  const run = runs[0];
+  const now = useNow(isOpen(run));
+  if (!run) return null;
+  const live = isOpen(run, now);
+  const ranToday = new Date(run.startedAt).toDateString() === new Date(now).toDateString();
+  if (!live && !ranToday) return null;
+
+  const state = runState(run, now);
+  const [, tone] = STATE[state];
+  const steps = stepsFor(run);
+  const total = (RUN_STEPS[run.kind] || []).length || steps.length;
+  const through = steps.filter((s) => ['done', 'skipped', 'failed'].includes(s.status)).length;
+  const current = steps.find((s) => s.status === 'running');
+  const title = `${RUN_TITLE[run.kind] || 'Agent run'}${run.label ? `: ${run.label}` : ''}`;
+
+  let head;
+  let body = '';
+  if (live && state !== 'noshow') {
+    head = current ? `Agent is on step ${through + 1} of ${total}: ${current.label}` : `${title} starting`;
+    body = current?.detail || '';
+  } else if (state === 'done') {
+    head = `${title} finished at ${clock(run.finishedAt)}`;
+    body = run.summary;
+  } else if (state === 'failed') {
+    head = `${title} failed at ${clock(run.finishedAt)}`;
+    body = run.summary;
+  } else {
+    head = `${title} isn't reporting`;
+    body = stateNote(state, run, now);
+  }
+
+  return (
+    <section className={`agent-line ${tone}`} aria-live="polite">
+      {live ? <span className="agent-pulse" aria-hidden="true" /> : null}
+      <div className="agent-line-text">
+        <p className="agent-line-head">{head}</p>
+        {body ? <p className="agent-line-body">{body}</p> : null}
+      </div>
+      <button className="ghost" onClick={openBrief}>
+        {live ? 'Watch' : 'See steps'}
+      </button>
+    </section>
+  );
+}

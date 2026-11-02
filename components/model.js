@@ -69,11 +69,26 @@ export function daysAgo(v) {
   return Math.floor((Date.now() - d.getTime()) / 86400000);
 }
 
-/** A row needs action when a deadline, interview or follow-up has come due. */
+/* An interview counts as over this long after it started. */
+const INTERVIEW_MS = 2 * 60 * 60 * 1000;
+
+/** The interview has happened and nobody has said how it went yet. "Waiting to
+ *  hear" sets debriefOn, which settles it until a new interview is booked. */
+export function needsDebrief(j) {
+  if (CLOSED.has(j.status) || !j.interviewAt) return false;
+  const at = Date.parse(j.interviewAt);
+  if (Number.isNaN(at) || at > Date.now() - INTERVIEW_MS) return false;
+  return !(j.debriefOn && j.debriefOn >= j.interviewAt.slice(0, 10));
+}
+
+/** A row needs action when a deadline, interview or follow-up has come due,
+ *  or an interview is over and its outcome isn't recorded. */
 export function dueReason(j) {
   if (CLOSED.has(j.status)) return null;
   if (j.deadline && j.deadline <= plusDays(1)) return 'deadline';
-  if (j.interviewAt && j.interviewAt.slice(0, 10) <= plusDays(1)) return 'interview';
+  if (needsDebrief(j)) return 'debrief';
+  const upcoming = j.interviewAt && Date.parse(j.interviewAt) > Date.now() - INTERVIEW_MS;
+  if (upcoming && j.interviewAt.slice(0, 10) <= plusDays(1)) return 'interview';
   if (j.followUpOn && j.followUpOn <= today()) return 'follow-up';
   return null;
 }
@@ -101,6 +116,11 @@ export function markSentPatch(j) {
     status: j.status === 'wishlist' ? 'outreach' : j.status,
     pinnedOn: '',
   };
+}
+
+/** The fields "Mark applied" sets: the stage, the date, and a follow-up. */
+export function markAppliedPatch() {
+  return { status: 'applied', appliedOn: today(), followUpOn: plusDays(FOLLOW_UP_DAYS), pinnedOn: '' };
 }
 
 /** What to do today, most urgent first: anything due, roles you pinned, then
@@ -142,7 +162,10 @@ export function needsDecision(j) {
 export function dailyActivity(jobs, events) {
   const sent = new Set();
   const applied = new Set();
-  for (const j of jobs) if (j.messagedOn) sent.add(`${j.id}|${j.messagedOn}`);
+  for (const j of jobs) {
+    if (j.messagedOn) sent.add(`${j.id}|${j.messagedOn}`);
+    if (j.appliedOn) applied.add(`${j.id}|${j.appliedOn}`);
+  }
   for (const e of events) {
     if (e.field === 'messagedOn' && e.new_val) sent.add(`${e.job_id}|${e.new_val.slice(0, 10)}`);
     if (e.field === 'status' && e.new_val === 'applied') applied.add(`${e.job_id}|${iso(new Date(e.at))}`);
@@ -160,6 +183,18 @@ export function dailyActivity(jobs, events) {
 
 /* The forward path a role moves along; rejected and dropped are exits from it. */
 export const STAGES = ['wishlist', 'outreach', 'applied', 'interviewing', 'offer'];
+
+/** How many messages and applications went out this week (Monday to today). */
+export function weekActivity(days) {
+  const dow = (new Date().getDay() + 6) % 7;
+  let sent = 0;
+  let applied = 0;
+  for (let i = 0; i <= dow; i += 1) {
+    sent += days[plusDays(-i)]?.sent || 0;
+    applied += days[plusDays(-i)]?.applied || 0;
+  }
+  return { sent, applied };
+}
 
 export function daysLeft() {
   return Math.max(0, Math.ceil((new Date(`${OFFER_BY}T00:00:00+05:30`) - Date.now()) / 86400000));
@@ -210,6 +245,7 @@ export function nextStepText(j) {
   const due = dueReason(j);
   if (due === 'deadline') return `Deadline ${fmtDate(j.deadline)}`;
   if (due === 'interview') return `Interview ${fmtWhen(j.interviewAt)}`;
+  if (due === 'debrief') return 'Record how the interview went';
   if (due === 'follow-up') return 'Follow up now';
   if (isSnoozed(j)) return `Snoozed to ${fmtDate(j.snoozedUntil)}`;
   if (j.followUpOn) return `Follow up ${fmtDate(j.followUpOn)}`;
