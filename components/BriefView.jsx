@@ -1,5 +1,7 @@
 import { fmtDate, today } from './model';
 import { CopyBox, RunAgent } from './parts';
+import { AgentRuns } from './AgentRun';
+import { isOpen } from './runs';
 
 /** Split "Lead sentence. The rest…" so the lead can stand out. Only short
  *  leads count; a long first sentence stays as body text. */
@@ -24,7 +26,7 @@ function Item({ text, n }) {
 }
 
 /** The agent's morning brief on its own page, laid out for reading rather than scanning. */
-export default function BriefView({ brief, agentReady }) {
+export default function BriefView({ brief, agentReady, runs = [] }) {
   const todo = brief.todo || [];
   const inbox = brief.inbox || [];
   const stale = brief.date && brief.date !== today();
@@ -39,8 +41,10 @@ export default function BriefView({ brief, agentReady }) {
           <h1>Morning brief</h1>
           <p>{written ? `Written ${written}` : 'No brief yet'}</p>
         </div>
-        <RunAgent ready={agentReady} />
+        <RunAgent ready={agentReady} busy={runs.some((r) => r.kind === 'morning' && isOpen(r))} />
       </header>
+
+      <AgentRuns runs={runs} />
 
       {stale ? (
         <div className="banner warn">

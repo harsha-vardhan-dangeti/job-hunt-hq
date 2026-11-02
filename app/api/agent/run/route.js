@@ -1,6 +1,7 @@
 import { canWrite, unauthorized } from '../../../../lib/auth';
 import { agentReady } from '../../../../lib/agent';
-import { upsertJob, hasDb } from '../../../../lib/db';
+import { upsertJob, hasDb, listJobs, updateRuns } from '../../../../lib/db';
+import { KEEP_RUNS, newRun } from '../../../../components/runs';
 
 export const dynamic = 'force-dynamic';
 
@@ -63,7 +64,22 @@ export async function POST(request) {
         requestedAt = null;
       });
     }
-    return Response.json({ sessionUrl: body.claude_code_session_url || null, requestedAt });
+    // Record the run so the page can follow it until the agent's first report.
+    const sessionUrl = body.claude_code_session_url || null;
+    const kind = jobId ? 'resume' : task === 'jds' ? 'jds' : 'morning';
+    let label = '';
+    if (jobId) {
+      const j = (await listJobs().catch(() => [])).find((x) => x.id === jobId);
+      label = j ? [j.company, j.role].filter(Boolean).join(', ') : jobId;
+    }
+    let run = null;
+    await updateRuns((runs) => {
+      run = newRun({ kind, trigger: 'button', sessionUrl, label });
+      return [run, ...runs].slice(0, KEEP_RUNS);
+    }).catch(() => {
+      run = null;
+    });
+    return Response.json({ sessionUrl, requestedAt, run });
   } catch (err) {
     return Response.json({ error: String(err.message || err) }, { status: 500 });
   }

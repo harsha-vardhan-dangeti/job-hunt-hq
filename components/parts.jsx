@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { startAgent } from './AgentRun';
 
 /** Fit as five dots, filled to the score. */
 export function Fit({ n }) {
@@ -10,51 +11,36 @@ export function Fit({ n }) {
   );
 }
 
-export function RunAgent({ ready }) {
-  const [state, setState] = useState({ busy: false, started: false, url: null, error: '' });
+/** Starts the morning routine now. While a run is live it waits; the run's
+ *  steps show below it as the agent reports them. */
+export function RunAgent({ ready, busy: running }) {
+  const [state, setState] = useState({ busy: false, error: '' });
 
   async function run() {
     if (
       !window.confirm(
-        'Run the job-hunt agent now?\n\nIt syncs Gmail, adds new roles, writes drafts and rewrites today\'s brief. A run takes about 10 minutes; reload the page afterwards to see the results.'
+        "Run the job-hunt agent now?\n\nIt syncs Gmail, adds new roles, writes drafts and rewrites today's brief. A run takes 10 to 20 minutes, and you can watch each step on this page."
       )
     )
       return;
-    setState({ busy: true, started: false, url: null, error: '' });
+    setState({ busy: true, error: '' });
     try {
-      const res = await fetch('/api/agent/run', { method: 'POST' });
-      const body = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(body.error || `Couldn't start the agent (${res.status})`);
-      setState({ busy: false, started: true, url: body.sessionUrl, error: '' });
+      await startAgent();
+      setState({ busy: false, error: '' });
     } catch (e) {
-      setState({ busy: false, started: false, url: null, error: e.message });
+      setState({ busy: false, error: e.message });
     }
   }
 
-  if (state.started) {
-    return (
-      <span className="agent-status">
-        Agent started
-        {state.url ? (
-          <>
-            {' · '}
-            <a href={state.url} target="_blank" rel="noopener noreferrer">
-              Watch the run ↗
-            </a>
-          </>
-        ) : null}
-      </span>
-    );
-  }
   return (
     <span className="agent-run">
       <button
         className="ghost"
         onClick={run}
-        disabled={!ready || state.busy}
+        disabled={!ready || state.busy || running}
         title={ready ? 'Start the scheduled agent now' : 'Connect the agent first: see the README'}
       >
-        {state.busy ? 'Starting…' : 'Run agent now'}
+        {state.busy ? 'Starting…' : running ? 'Agent running…' : 'Run agent now'}
       </button>
       {state.error ? <span className="saved err">{state.error}</span> : null}
       {!ready ? <span className="muted small">Agent not connected</span> : null}

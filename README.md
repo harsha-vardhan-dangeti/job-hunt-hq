@@ -154,6 +154,8 @@ session. Without either it returns 401.
 | `GET` | `/api/resume` | the master resume, `{text, updatedOn}` |
 | `PUT` | `/api/resume` | replace the master resume |
 | `POST` | `/api/ats` | score a resume for a role, `{jobId, resume?, jd?}`; saves nothing |
+| `GET` | `/api/agent/progress` | the last 10 agent runs, newest first, with their steps |
+| `POST` | `/api/agent/progress` | the agent reports a step: `{"kind"?, "step", "status", "detail"?}` (see below) |
 | `POST` | `/api/agent/run` | start the agent; with `{"jobId": "…"}` it only tailors that role's resume, with `{"task": "jds"}` it only reads missing job descriptions |
 | `POST` | `/api/seed` | one-time import of `seed/*.json` |
 
@@ -218,6 +220,20 @@ its API trigger, instead of waiting for the 8:30 weekday run. To connect it:
 
 Until both are set the button stays disabled. A routine can be fired 30 times an hour.
 
+### Watch a run live
+
+The Brief page shows the latest run as a chain of steps (read the tracker, Gmail, calendar,
+search, …, write the brief), filled in as the agent works, with a marker in the sidebar (the
+top bar on phones) on every page while it runs. When the run ends, the page reloads the brief
+and roles by itself.
+
+The agent drives this: its prompt's PROGRESS section has it `POST /api/agent/progress` at the
+start and end of every step. The first report carries `"kind"` (`morning`, `resume` or
+`jds`) and takes over the run the button just recorded, or opens one for a scheduled run; the
+last has `"step": "finish"`. Runs are kept in the `profile` table's `runs` row (the last 10).
+A run the button started that never reports shows "Not reporting" after five minutes, which
+usually means the routine prompt is missing that section.
+
 ---
 
 ## Layout
@@ -234,6 +250,8 @@ app/
   api/brief/route.js    read + replace the brief
   api/resume/route.js   read + replace the master resume
   api/ats/route.js      ATS score for a draft or saved resume
+  api/agent/run/route.js       start the agent, record the run
+  api/agent/progress/route.js  the agent's step reports; the page polls it
   api/seed/route.js     one-time import
   api/auth/route.js     sign in / out
 components/
@@ -245,6 +263,8 @@ components/
   resume.js             which roles need a resume, the fact check, plain-text export
   ats.js                the ATS score: keywords, title, sections, length
   latex.js              the tailored resume as a LaTeX file, sent to Overleaf
+  AgentRun.jsx          the live run: step chain, sidebar marker, polling
+  runs.js               run steps and how a progress report updates a run (no React)
   ListViews.jsx         filters, Pipeline board (drag to change stage), Roles table
   RoleDrawer.jsx        one role: stage tracker, next step, history, all fields
   InsightsView.jsx      pace, weekly target, streak, chart, funnel, sources

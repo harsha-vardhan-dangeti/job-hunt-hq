@@ -3,6 +3,7 @@ import { fmtDate } from './model';
 import { Fit } from './parts';
 import { ATS_TARGET } from './ats';
 import { openInOverleaf } from './latex';
+import { startAgent } from './AgentRun';
 import { JD_SOURCE, atsFor, factCheck, resumeState, resumeText, wantsJd, wantsResume } from './resume';
 
 const STATE_TEXT = {
@@ -112,14 +113,8 @@ function JdStatus({ jobs, agentReady, readOnly }) {
       return;
     setState({ busy: true, msg: '', error: false });
     try {
-      const res = await fetch('/api/agent/run', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ task: 'jds' }),
-      });
-      const body = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(body.error || `Couldn't start the agent (${res.status})`);
-      setState({ busy: false, msg: 'Reading job descriptions. Reload in a few minutes.', error: false });
+      await startAgent({ task: 'jds' });
+      setState({ busy: false, msg: 'Reading job descriptions. The Brief page shows each step.', error: false });
     } catch (e) {
       setState({ busy: false, msg: e.message, error: true });
     }

@@ -437,6 +437,157 @@ button.danger:hover:not(:disabled) { border-color: var(--bad); }
 /* ---------- brief ---------- */
 
 .agent-run, .agent-status { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12px; }
+
+/* ---------- agent runs: the steps of the latest run, as the agent reports them ---------- */
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+.agent-runs { display: grid; gap: 10px; }
+.run-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 16px 18px;
+  display: grid;
+  gap: 10px;
+}
+.run-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.run-head h3 { margin: 0 0 2px; font: 600 16px/1.3 var(--display); }
+.run-head p { margin: 0; }
+.run-label { font-weight: 500; color: var(--muted); }
+
+.run-state {
+  flex: none;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.run-state.live { background: var(--accent-soft); color: var(--accent); }
+.run-state.ok { background: var(--ok-soft); color: var(--ok); }
+.run-state.warn { background: var(--warn-soft); color: var(--warn); }
+.run-state.bad { background: var(--bad-soft); color: var(--bad); }
+
+.run-progress { height: 6px; border-radius: 999px; background: var(--idle-soft); overflow: hidden; }
+.run-progress span { display: block; height: 100%; background: var(--accent); border-radius: inherit; transition: width 0.4s ease; }
+.run-count { margin: -4px 0 0; color: var(--muted); }
+
+.run-note, .run-summary { margin: 0; font-size: 13px; padding: 9px 12px; border-radius: 8px; }
+.run-note.warn, .run-summary.warn { background: var(--warn-soft); color: var(--warn); }
+.run-note.live { background: var(--surface-2); color: var(--muted); }
+.run-summary.ok { background: var(--ok-soft); color: var(--ink); }
+.run-summary.bad { background: var(--bad-soft); color: var(--bad); }
+
+/* The chain: one dot per step on a line, filled as the agent works through them. */
+.chain { list-style: none; margin: 4px 0 0; padding: 0; display: grid; }
+.chain-step {
+  --dot: var(--line);
+  position: relative;
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) auto;
+  gap: 10px;
+  padding-bottom: 12px;
+}
+.chain-step:last-child { padding-bottom: 0; }
+.chain-step::before {
+  content: '';
+  position: absolute;
+  left: 10px;
+  top: 20px;
+  bottom: 0;
+  width: 2px;
+  background: var(--line);
+}
+.chain-step:last-child::before { display: none; }
+.chain-step.done::before { background: var(--ok); }
+.chain-dot {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--dot);
+  background: var(--surface);
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+}
+.chain-step.done { --dot: var(--ok); }
+.chain-step.done .chain-dot { background: var(--ok); color: var(--surface); }
+.chain-step.done .chain-dot::after { content: '✓'; }
+.chain-step.running { --dot: var(--accent); }
+.chain-step.running .chain-dot::after {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+.chain-step.failed { --dot: var(--bad); }
+.chain-step.failed .chain-dot { background: var(--bad); color: var(--surface); }
+.chain-step.failed .chain-dot::after { content: '✕'; }
+.chain-step.skipped { --dot: var(--idle); }
+.chain-step.skipped .chain-dot::after { content: '–'; color: var(--idle); }
+.chain-step.missed .chain-dot { border-style: dashed; }
+.chain-body { min-width: 0; padding-top: 1px; }
+.chain-label { margin: 0; font-size: 14px; font-weight: 500; }
+.chain-step.pending .chain-label, .chain-step.missed .chain-label, .chain-step.skipped .chain-label { color: var(--muted); font-weight: 400; }
+.chain-step.running .chain-label { color: var(--accent); font-weight: 600; }
+.chain-detail { margin: 2px 0 0; font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
+.chain-step.failed .chain-detail { color: var(--bad); }
+.chain-time { font-size: 12px; color: var(--muted); padding-top: 3px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+.run-history > summary { cursor: pointer; font-size: 13px; color: var(--muted); padding: 6px 2px; }
+.run-history ul { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 6px; }
+.run-history-h { margin: 0 0 6px; font-size: 13px; color: var(--muted); }
+.run-row > summary {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  font-size: 13px;
+}
+.run-row > summary > span:first-child { font-weight: 500; flex: 1 1 200px; min-width: 0; }
+.run-row[open] > summary { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+.run-row > .run-card { border-top: 0; border-top-left-radius: 0; border-top-right-radius: 0; }
+
+/* The "agent running" marker in the sidebar and the phone top bar. */
+.agent-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  padding: 7px 10px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+}
+.agent-pill-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.agent-pill small { font-weight: 500; opacity: 0.8; font-variant-numeric: tabular-nums; }
+.agent-pulse {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+@keyframes pulse { 50% { opacity: 0.3; transform: scale(0.75); } }
 .naukri {
   font-size: 14px;
   background: var(--surface-2);
@@ -1182,6 +1333,9 @@ table.mini th, table.mini td { padding: 4px 14px 4px 0; position: static; }
   .side-days b { font-size: 22px; }
   .side-actions { flex-direction: column; align-items: center; }
   .side-actions .ghost { padding: 5px 6px; font-size: 11px; }
+  .sidebar .agent-pill { padding: 7px 8px; }
+  .sidebar .agent-pill-text { font-size: 0; }
+  .sidebar .agent-pill small { font-size: 11px; }
 }
 
 @media (max-width: 680px) {
@@ -1313,7 +1467,14 @@ table.mini th, table.mini td { padding: 4px 14px 4px 0; position: static; }
   .wrap { padding-left: max(16px, env(safe-area-inset-left)); padding-right: max(16px, env(safe-area-inset-right)); }
 }
 
+@media (max-width: 680px) {
+  .topbar .agent-pill-text { max-width: 9em; }
+  .topbar-right:has(.agent-pill) .days-left { display: none; }
+}
+
 @media (max-width: 380px) {
+  .topbar .agent-pill-text { font-size: 0; }
+  .topbar .agent-pill small { font-size: 11px; }
   .brand-name { display: none; }
   .brand-mark { font-size: 12px; }
 }

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import ActivityView from './ActivityView';
+import { startAgent, useAgentRuns } from './AgentRun';
 import BriefView from './BriefView';
 import InsightsView from './InsightsView';
 import { DEFAULT_FILTERS, Filters, PipelineView, RolesView, applyFilters, countBy } from './ListViews';
@@ -24,7 +25,7 @@ export default function Tracker({
   gated,
 }) {
   const [jobs, setJobs] = useState(initialJobs || []);
-  const [brief] = useState(initialBrief || {});
+  const [brief, setBrief] = useState(initialBrief || {});
   const [master, setMaster] = useState(initialResume || {});
   const [resumeId, setResumeId] = useState(null);
   const [view, setViewState] = useState('today');
@@ -107,6 +108,25 @@ export default function Tracker({
     toastTimer.current = setTimeout(() => setToast(null), 7000);
   }
 
+  /* When a run ends, pick up what it wrote: the brief, new roles, resumes. */
+  const runs = useAgentRuns(async (run) => {
+    try {
+      const [j, b] = await Promise.all([
+        fetch('/api/jobs', { cache: 'no-store' }).then((r) => r.json()),
+        fetch('/api/brief', { cache: 'no-store' }).then((r) => r.json()),
+      ]);
+      if (j.jobs) setJobs(j.jobs);
+      if (b.brief) setBrief(b.brief);
+    } catch {
+      /* the page keeps what it has; a reload picks it up */
+    }
+    showToast(
+      run.status === 'failed'
+        ? { text: `The agent run failed. ${run.summary || 'See the Brief page for where it stopped.'}`, error: true }
+        : { text: 'The agent finished. The brief and roles are up to date.' }
+    );
+  });
+
   async function save(id, patch) {
     const res = await fetch(`/api/jobs/${encodeURIComponent(id)}`, {
       method: 'PATCH',
@@ -174,16 +194,10 @@ export default function Tracker({
     )
       return;
     try {
-      const res = await fetch('/api/agent/run', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ jobId: j.id }),
-      });
-      const body = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(body.error || `Couldn't start the agent (${res.status})`);
+      const body = await startAgent({ jobId: j.id });
       const at = body.requestedAt || new Date().toISOString();
       setJobs((prev) => prev.map((x) => (x.id === j.id ? { ...x, resumeRequestedOn: at } : x)));
-      showToast({ text: `Tailoring the ${j.company} resume. Reload in a few minutes.` });
+      showToast({ text: `Tailoring the ${j.company} resume. The Brief page shows each step.` });
     } catch (e) {
       showToast({ text: e.message, error: true });
     }
@@ -234,6 +248,7 @@ export default function Tracker({
         theme={theme}
         toggleTheme={toggleTheme}
         onSignOut={gated ? signOut : null}
+        run={runs[0]}
       />
 
       <main className={`wrap${view === 'resumes' ? ' wide' : ''}`} id="main">
@@ -263,7 +278,7 @@ export default function Tracker({
             openBrief={() => setView('brief')}
           />
         ) : view === 'brief' ? (
-          <BriefView brief={brief} agentReady={agentReady} />
+          <BriefView brief={brief} agentReady={agentReady} runs={runs} />
         ) : view === 'resumes' ? (
           <ResumesView
             jobs={jobs}

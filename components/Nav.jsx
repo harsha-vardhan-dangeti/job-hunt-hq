@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { AgentPill } from './AgentRun';
 
 const ICONS = {
   today: 'M12 3v2M12 19v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M3 12h2M19 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z',
@@ -133,7 +134,7 @@ function ThemeButton({ theme, toggleTheme }) {
 
 /** A sidebar on desktop (an icon rail on tablets). Phones get a slim top bar
  *  and the bottom tab bar instead. */
-export default function Nav({ view, setView, badges, daysLeft, theme, toggleTheme, onSignOut }) {
+export default function Nav({ view, setView, badges, daysLeft, theme, toggleTheme, onSignOut, run }) {
   const tight = daysLeft <= 21 ? ' tight' : '';
   return (
     <>
@@ -143,6 +144,7 @@ export default function Nav({ view, setView, badges, daysLeft, theme, toggleThem
           <Links view={view} setView={setView} badges={badges} />
         </nav>
         <div className="side-foot">
+          <AgentPill run={run} onOpen={() => setView('brief')} />
           <p className={`side-days${tight}`} title="Days until your 15 November offer date">
             <b>{daysLeft}</b>
             <span className="nav-label">days to your 15 Nov offer date</span>
@@ -161,6 +163,7 @@ export default function Nav({ view, setView, badges, daysLeft, theme, toggleThem
       <header className="topbar">
         <Brand setView={setView} />
         <div className="topbar-right">
+          <AgentPill run={run} onOpen={() => setView('brief')} />
           <span className={`days-left${tight}`} title="Days until your 15 November offer date">
             <b>{daysLeft}</b> days left
           </span>
