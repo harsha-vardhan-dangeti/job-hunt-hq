@@ -196,6 +196,7 @@ export default function RoleDrawer({
   agentReady,
   tailor,
   openResume,
+  closing,
   onClose,
   onDeleted,
 }) {
@@ -280,7 +281,7 @@ export default function RoleDrawer({
   const age = daysAgo(j.postedOn);
 
   return (
-    <div className="drawer-backdrop" onMouseDown={(e) => e.target === e.currentTarget && close()}>
+    <div className={`drawer-backdrop${closing ? ' closing' : ''}`} onMouseDown={(e) => e.target === e.currentTarget && close()}>
       <aside className="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-h" ref={panelRef} tabIndex={-1}>
         <header className="drawer-head">
           <div>

@@ -24,7 +24,7 @@ import {
   today,
   weekActivity,
 } from './model';
-import { Fit } from './parts';
+import { Fit, Motion } from './parts';
 import { AgentLine } from './AgentRun';
 import { atsFor, resumeState } from './resume';
 import { ATS_TARGET } from './ats';
@@ -250,57 +250,59 @@ function DecideCard({ jobs, act, openRole, readOnly }) {
       </div>
       <div className="decide">
         {shown.map((j) => (
-          <div className="drow" key={j.id}>
-            <div className="dwho">
-              <button className="linklike co" onClick={() => openRole(j.id)}>
-                {j.company}
-              </button>
-              <span className="role">{j.role || 'Role to pick'}</span>
-            </div>
-            <Fit n={j.fit} />
-            {deadlinePassed(j) ? (
-              <span className="mono late">Deadline {fmtDate(j.deadline)} passed</span>
-            ) : (
-              <span className="mono">{daysAgo(j.addedOn)}d</span>
-            )}
-            <div className="dbtns">
-              {deadlinePassed(j) ? (
-                <button
-                  className="ghost"
-                  disabled={readOnly}
-                  onClick={() => act(j, { deadline: '' }, `Cleared the ${j.company} deadline`)}
-                >
-                  Clear deadline
+          <Motion key={j.id}>
+            <div className="drow">
+              <div className="dwho">
+                <button className="linklike co" onClick={() => openRole(j.id)}>
+                  {j.company}
                 </button>
+                <span className="role">{j.role || 'Role to pick'}</span>
+              </div>
+              <Fit n={j.fit} />
+              {deadlinePassed(j) ? (
+                <span className="mono late">Deadline {fmtDate(j.deadline)} passed</span>
               ) : (
-                <>
-                  <button
-                    className="ghost"
-                    disabled={readOnly}
-                    onClick={() => act(j, { pinnedOn: today() }, `${j.company} moved into Today`)}
-                  >
-                    Do now
-                  </button>
-                  <button
-                    className="ghost"
-                    disabled={readOnly}
-                    onClick={() =>
-                      act(j, { snoozedUntil: plusDays(SNOOZE_DAYS) }, `${j.company} snoozed ${SNOOZE_DAYS} days`)
-                    }
-                  >
-                    Snooze {SNOOZE_DAYS}d
-                  </button>
-                </>
+                <span className="mono">{daysAgo(j.addedOn)}d</span>
               )}
-              <button
-                className="ghost danger"
-                disabled={readOnly}
-                onClick={() => confirmDrop(j) && act(j, { status: 'dropped' }, `Dropped ${j.company}`)}
-              >
-                Drop
-              </button>
+              <div className="dbtns">
+                {deadlinePassed(j) ? (
+                  <button
+                    className="ghost"
+                    disabled={readOnly}
+                    onClick={() => act(j, { deadline: '' }, `Cleared the ${j.company} deadline`)}
+                  >
+                    Clear deadline
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      className="ghost"
+                      disabled={readOnly}
+                      onClick={() => act(j, { pinnedOn: today() }, `${j.company} moved into Today`)}
+                    >
+                      Do now
+                    </button>
+                    <button
+                      className="ghost"
+                      disabled={readOnly}
+                      onClick={() =>
+                        act(j, { snoozedUntil: plusDays(SNOOZE_DAYS) }, `${j.company} snoozed ${SNOOZE_DAYS} days`)
+                      }
+                    >
+                      Snooze {SNOOZE_DAYS}d
+                    </button>
+                  </>
+                )}
+                <button
+                  className="ghost danger"
+                  disabled={readOnly}
+                  onClick={() => confirmDrop(j) && act(j, { status: 'dropped' }, `Dropped ${j.company}`)}
+                >
+                  Drop
+                </button>
+              </div>
             </div>
-          </div>
+          </Motion>
         ))}
       </div>
       {rows.length > 5 ? (
@@ -471,36 +473,38 @@ function ReadyToApply({ jobs, master, act, openRole, openResume, readOnly }) {
       </div>
       <ul className="qlist">
         {shown.map(({ j, ats, stale }) => (
-          <li className="qrow" key={j.id}>
-            <button className="qrow-main" onClick={() => openRole(j.id)}>
-              <span className="co">{j.company}</span>
-              <span className="role">{j.role || 'Role to pick'}</span>
-              <span className="qreason">
-                {ats != null ? (
-                  <span className={`ats-tag ${ats >= ATS_TARGET ? 'ok' : 'warn'}`}>ATS {ats}</span>
-                ) : null}{' '}
-                {stale ? 'Your master resume changed since; tailor it again first.' : `Tailored ${fmtDate(j.resume.generatedOn)}`}
-              </span>
-            </button>
-            <Fit n={j.fit} />
-            <div className="qrow-actions">
-              <button className="ghost" onClick={() => openResume(j.id)}>
-                Resume
+          <Motion key={j.id}>
+            <li className="qrow">
+              <button className="qrow-main" onClick={() => openRole(j.id)}>
+                <span className="co">{j.company}</span>
+                <span className="role">{j.role || 'Role to pick'}</span>
+                <span className="qreason">
+                  {ats != null ? (
+                    <span className={`ats-tag ${ats >= ATS_TARGET ? 'ok' : 'warn'}`}>ATS {ats}</span>
+                  ) : null}{' '}
+                  {stale ? 'Your master resume changed since; tailor it again first.' : `Tailored ${fmtDate(j.resume.generatedOn)}`}
+                </span>
               </button>
-              {j.url ? (
-                <a className="qlink" href={j.url} target="_blank" rel="noopener noreferrer">
-                  Apply ↗
-                </a>
-              ) : null}
-              <button
-                className="primary"
-                disabled={readOnly}
-                onClick={() => act(j, markAppliedPatch(), `Applied to ${j.company}. Follow-up in ${FOLLOW_UP_DAYS} days.`)}
-              >
-                Mark applied
-              </button>
-            </div>
-          </li>
+              <Fit n={j.fit} />
+              <div className="qrow-actions">
+                <button className="ghost" onClick={() => openResume(j.id)}>
+                  Resume
+                </button>
+                {j.url ? (
+                  <a className="qlink" href={j.url} target="_blank" rel="noopener noreferrer">
+                    Apply ↗
+                  </a>
+                ) : null}
+                <button
+                  className="primary"
+                  disabled={readOnly}
+                  onClick={() => act(j, markAppliedPatch(), `Applied to ${j.company}. Follow-up in ${FOLLOW_UP_DAYS} days.`)}
+                >
+                  Mark applied
+                </button>
+              </div>
+            </li>
+          </Motion>
         ))}
       </ul>
       {rows.length > 4 ? (
@@ -530,25 +534,27 @@ function NewRoles({ jobs, act, openRole, readOnly }) {
         {rows.slice(0, 6).map((j) => {
           const age = daysAgo(j.postedOn);
           return (
-            <li key={j.id}>
-              <button className="new-main" onClick={() => openRole(j.id)}>
-                <span className="co">{j.company}</span>
-                <span className="role">{j.role || 'Role to pick'}</span>
-                <span className="muted small">
-                  {age != null ? `Posted ${age === 0 ? 'today' : `${age}d ago`}` : 'Posting date unknown'}
-                  {j.jd ? '' : ', no job description yet'}
-                </span>
-              </button>
-              <Fit n={j.fit} />
-              <button
-                className="ghost danger"
-                disabled={readOnly}
-                onClick={() => confirmDrop(j) && act(j, { status: 'dropped' }, `Dropped ${j.company}`)}
-                aria-label={`Drop ${j.company}`}
-              >
-                Drop
-              </button>
-            </li>
+            <Motion key={j.id}>
+              <li>
+                <button className="new-main" onClick={() => openRole(j.id)}>
+                  <span className="co">{j.company}</span>
+                  <span className="role">{j.role || 'Role to pick'}</span>
+                  <span className="muted small">
+                    {age != null ? `Posted ${age === 0 ? 'today' : `${age}d ago`}` : 'Posting date unknown'}
+                    {j.jd ? '' : ', no job description yet'}
+                  </span>
+                </button>
+                <Fit n={j.fit} />
+                <button
+                  className="ghost danger"
+                  disabled={readOnly}
+                  onClick={() => confirmDrop(j) && act(j, { status: 'dropped' }, `Dropped ${j.company}`)}
+                  aria-label={`Drop ${j.company}`}
+                >
+                  Drop
+                </button>
+              </li>
+            </Motion>
           );
         })}
       </ul>
@@ -577,7 +583,7 @@ export default function TodayView({
   return (
     <>
       <header className="page-head">
-        <h1>{greeting()}.</h1>
+        <h1>{greeting()}</h1>
         <p>{dateLine}.</p>
       </header>
 
@@ -587,9 +593,11 @@ export default function TodayView({
       <div className="today-grid">
         <div className="today-main">
           {first ? (
-            <div data-area="next">
-              <NextMove item={first} act={act} openRole={openRole} readOnly={readOnly} />
-            </div>
+            <Motion key={first.j.id}>
+              <div data-area="next">
+                <NextMove item={first} act={act} openRole={openRole} readOnly={readOnly} />
+              </div>
+            </Motion>
           ) : (
             <section className="card empty-state" data-area="next">
               <h2>Nothing queued</h2>
@@ -601,36 +609,50 @@ export default function TodayView({
           )}
 
           {shown.length ? (
-            <section className="card" aria-labelledby="then-h" data-area="then">
-              <div className="card-head">
-                <h2 id="then-h">Then</h2>
-                <span className="eyebrow">
-                  {queue.length - 1} more in the queue{queue.length - 1 > shown.length ? `, showing ${shown.length}` : ''}
-                </span>
-              </div>
-              <ul className="qlist">
-                {shown.map((item) => (
-                  <QueueRow key={item.j.id} item={item} act={act} openRole={openRole} readOnly={readOnly} />
-                ))}
-              </ul>
-            </section>
+            <Motion>
+              <section className="card" aria-labelledby="then-h" data-area="then">
+                <div className="card-head">
+                  <h2 id="then-h">Then</h2>
+                  <span className="eyebrow">
+                    {queue.length - 1} more in the queue{queue.length - 1 > shown.length ? `, showing ${shown.length}` : ''}
+                  </span>
+                </div>
+                <ul className="qlist">
+                  {shown.map((item) => (
+                    <Motion key={item.j.id}>
+                      <QueueRow item={item} act={act} openRole={openRole} readOnly={readOnly} />
+                    </Motion>
+                  ))}
+                </ul>
+              </section>
+            </Motion>
           ) : null}
 
-          <ReadyToApply
-            jobs={jobs}
-            master={master}
-            act={act}
-            openRole={openRole}
-            openResume={openResume}
-            readOnly={readOnly}
-          />
-          <DecideCard jobs={jobs} act={act} openRole={openRole} readOnly={readOnly} />
+          <Motion>
+            <ReadyToApply
+              jobs={jobs}
+              master={master}
+              act={act}
+              openRole={openRole}
+              openResume={openResume}
+              readOnly={readOnly}
+            />
+          </Motion>
+          <Motion>
+            <DecideCard jobs={jobs} act={act} openRole={openRole} readOnly={readOnly} />
+          </Motion>
         </div>
 
         <div className="today-side">
-          <Week jobs={jobs} openRole={openRole} />
-          <NewRoles jobs={jobs} act={act} openRole={openRole} readOnly={readOnly} />
-          <BriefTeaser brief={brief} openBrief={openBrief} />
+          <Motion>
+            <Week jobs={jobs} openRole={openRole} />
+          </Motion>
+          <Motion>
+            <NewRoles jobs={jobs} act={act} openRole={openRole} readOnly={readOnly} />
+          </Motion>
+          <Motion>
+            <BriefTeaser brief={brief} openBrief={openBrief} />
+          </Motion>
         </div>
       </div>
     </>

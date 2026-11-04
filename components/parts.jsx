@@ -1,13 +1,26 @@
-import { useState } from 'react';
+import { useState, ViewTransition } from 'react';
 import { startAgent } from './AgentRun';
 
 /** Fit as five dots, filled to the score. */
 export function Fit({ n }) {
   return (
-    <span className="fit" title={`Fit ${n || 0} of 5`} aria-label={`Fit ${n || 0} of 5`}>
-      {'●'.repeat(n || 0)}
-      {'○'.repeat(Math.max(0, 5 - (n || 0)))}
+    <span className="fit" role="img" title={`Fit ${n || 0} of 5`} aria-label={`Fit ${n || 0} of 5`}>
+      {[1, 2, 3, 4, 5].map((i) => (
+        <i key={i} className={i <= (n || 0) ? 'on' : undefined} />
+      ))}
     </span>
+  );
+}
+
+/** One row or card that animates when a save changes the page: it fades in
+ *  when it arrives, fades out when it leaves, and slides when the rows around
+ *  it move. Only updates made inside startTransition animate, so typing and
+ *  polling never do. */
+export function Motion({ children }) {
+  return (
+    <ViewTransition enter="vt-in" exit="vt-out" update="vt-move" default="none">
+      {children}
+    </ViewTransition>
   );
 }
 

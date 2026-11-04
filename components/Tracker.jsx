@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { startTransition, useEffect, useMemo, useRef, useState, ViewTransition } from 'react';
 import ActivityView from './ActivityView';
 import { startAgent, useAgentRuns } from './AgentRun';
 import BriefView from './BriefView';
@@ -31,8 +31,10 @@ export default function Tracker({
   const [view, setViewState] = useState('today');
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
   const [openId, setOpenId] = useState(null);
+  const [closing, setClosing] = useState(false);
   const [theme, setTheme] = useState(null);
   const [toast, setToast] = useState(null);
+  const [toastLeaving, setToastLeaving] = useState(false);
   /* The screens depend on the viewer's local date, which the server can't know,
      so they render after hydration. */
   const [mounted, setMounted] = useState(false);
@@ -44,15 +46,17 @@ export default function Tracker({
     setMounted(true);
     const fromHash = () => {
       const h = window.location.hash.slice(1);
-      if (VIEW_KEYS.includes(h)) setViewState(h);
+      if (VIEW_KEYS.includes(h)) startTransition(() => setViewState(h));
     };
     fromHash();
     window.addEventListener('hashchange', fromHash);
     return () => window.removeEventListener('hashchange', fromHash);
   }, []);
 
+  /* Switching sections is a transition, so the old one fades out as the new one
+     fades in (see the page-in and page-out view transitions in globals.css). */
   function setView(v) {
-    setViewState(v);
+    startTransition(() => setViewState(v));
     if (window.location.hash.slice(1) !== v) window.history.pushState(null, '', `#${v}`);
     window.scrollTo({ top: 0 });
   }
@@ -77,7 +81,13 @@ export default function Tracker({
       (!document.documentElement.dataset.theme && window.matchMedia('(prefers-color-scheme: dark)').matches);
     const next = isDark ? 'light' : 'dark';
     setTheme(next);
-    document.documentElement.dataset.theme = next;
+    const apply = () => {
+      document.documentElement.dataset.theme = next;
+    };
+    // Cross-fade the whole page between themes where the browser can.
+    if (document.startViewTransition && !window.matchMedia('(prefers-reduced-motion: reduce)').matches)
+      document.startViewTransition(apply);
+    else apply();
     try {
       localStorage.setItem('jhhq_theme', next);
     } catch {
@@ -102,10 +112,33 @@ export default function Tracker({
     return () => window.removeEventListener('keydown', onKey);
   });
 
+  /* A toast rises in, and sinks out for a moment before it's removed. */
   function showToast(next) {
     clearTimeout(toastTimer.current);
-    setToast(next);
-    toastTimer.current = setTimeout(() => setToast(null), 7000);
+    setToastLeaving(false);
+    setToast(next && { ...next, id: Date.now() });
+    toastTimer.current = setTimeout(hideToast, 7000);
+  }
+  function hideToast() {
+    clearTimeout(toastTimer.current);
+    setToastLeaving(true);
+    toastTimer.current = setTimeout(() => {
+      setToast(null);
+      setToastLeaving(false);
+    }, 160);
+  }
+
+  /* Opening a role is instant; closing lets the panel slide out first. */
+  function openRole(id) {
+    setClosing(false);
+    setOpenId(id);
+  }
+  function closeRole() {
+    setClosing(true);
+    setTimeout(() => {
+      setOpenId(null);
+      setClosing(false);
+    }, 180);
   }
 
   /* When a run ends, pick up what it wrote: the brief, new roles, resumes. */
@@ -135,8 +168,11 @@ export default function Tracker({
     });
     const body = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(body.error || `Save failed (${res.status})`);
-    setJobs((prev) =>
-      prev.map((j) => (j.id === body.saved.id ? { ...j, ...body.saved, _updatedAt: new Date().toISOString() } : j))
+    // As a transition, so rows that move, leave or arrive animate into place.
+    startTransition(() =>
+      setJobs((prev) =>
+        prev.map((j) => (j.id === body.saved.id ? { ...j, ...body.saved, _updatedAt: new Date().toISOString() } : j))
+      )
     );
     return body.saved;
   }
@@ -149,7 +185,7 @@ export default function Tracker({
       showToast({
         text: label,
         undo: async () => {
-          setToast(null);
+          hideToast();
           try {
             await save(j.id, before);
           } catch (e) {
@@ -181,8 +217,8 @@ export default function Tracker({
       showToast({ text: body.error || 'Could not add a role.', error: true });
       return;
     }
-    setJobs((prev) => [...prev, saved]);
-    setOpenId(saved.id);
+    startTransition(() => setJobs((prev) => [...prev, saved]));
+    openRole(saved.id);
   }
 
   /** Ask the agent to tailor this role's resume now. */
@@ -267,64 +303,80 @@ export default function Tracker({
         ) : null}
 
         {!mounted ? (
-          <p className="muted">Loading your tracker…</p>
-        ) : view === 'today' ? (
-          <TodayView
-            jobs={jobs}
-            brief={brief}
-            events={events}
-            master={master}
-            runs={runs}
-            act={act}
-            openRole={setOpenId}
-            openResume={openResume}
-            readOnly={readOnly}
-            openBrief={() => setView('brief')}
-          />
-        ) : view === 'brief' ? (
-          <BriefView brief={brief} agentReady={agentReady} runs={runs} />
-        ) : view === 'resumes' ? (
-          <ResumesView
-            jobs={jobs}
-            master={master}
-            setMaster={setMaster}
-            selectedId={resumeId}
-            setSelectedId={setResumeId}
-            tailor={tailor}
-            openRole={setOpenId}
-            readOnly={readOnly}
-            agentReady={agentReady}
-          />
-        ) : view === 'pipeline' ? (
-          <>
-            <header className="page-head">
-              <h1>Pipeline</h1>
-              <p>Every open role by stage. Rejected and dropped roles are under Roles.</p>
-            </header>
-            <Filters {...filterProps} showPills={false} />
-            <PipelineView rows={visible} openRole={setOpenId} act={act} readOnly={readOnly} />
-          </>
-        ) : view === 'roles' ? (
-          <>
-            <header className="page-head">
-              <h1>Roles</h1>
-              <p>
-                {visible.length} of {jobs.length} roles shown. Click a row to see its stage, history and details.
-              </p>
-            </header>
-            <Filters {...filterProps} />
-            <RolesView rows={visible} total={jobs.length} openRole={setOpenId} />
-          </>
-        ) : view === 'insights' ? (
-          <>
-            <header className="page-head">
-              <h1>Insights</h1>
-              <p>How the search is tracking against your 15 November offer date.</p>
-            </header>
-            <InsightsView jobs={jobs} events={events} counts={counts} funnel={funnel} />
-          </>
+          <div className="skeleton" aria-busy="true" aria-label="Loading your tracker">
+            <span className="sk-line sk-h1" />
+            <span className="sk-line sk-sub" />
+            <div className="sk-tiles">
+              <span />
+              <span />
+              <span />
+              <span />
+            </div>
+            <span className="sk-block" />
+          </div>
         ) : (
-          <ActivityView events={events} openRole={setOpenId} />
+          <ViewTransition key={view} enter="page-in" exit="page-out" default="none">
+            <div className="view-pane">
+              {view === 'today' ? (
+                <TodayView
+                  jobs={jobs}
+                  brief={brief}
+                  events={events}
+                  master={master}
+                  runs={runs}
+                  act={act}
+                  openRole={openRole}
+                  openResume={openResume}
+                  readOnly={readOnly}
+                  openBrief={() => setView('brief')}
+                />
+              ) : view === 'brief' ? (
+                <BriefView brief={brief} agentReady={agentReady} runs={runs} />
+              ) : view === 'resumes' ? (
+                <ResumesView
+                  jobs={jobs}
+                  master={master}
+                  setMaster={setMaster}
+                  selectedId={resumeId}
+                  setSelectedId={setResumeId}
+                  tailor={tailor}
+                  openRole={openRole}
+                  readOnly={readOnly}
+                  agentReady={agentReady}
+                />
+              ) : view === 'pipeline' ? (
+                <>
+                  <header className="page-head">
+                    <h1>Pipeline</h1>
+                    <p>Every open role by stage. Rejected and dropped roles are under Roles.</p>
+                  </header>
+                  <Filters {...filterProps} showPills={false} />
+                  <PipelineView rows={visible} openRole={openRole} act={act} readOnly={readOnly} />
+                </>
+              ) : view === 'roles' ? (
+                <>
+                  <header className="page-head">
+                    <h1>Roles</h1>
+                    <p>
+                      {visible.length} of {jobs.length} roles shown. Click a row to see its stage, history and details.
+                    </p>
+                  </header>
+                  <Filters {...filterProps} />
+                  <RolesView rows={visible} total={jobs.length} openRole={openRole} />
+                </>
+              ) : view === 'insights' ? (
+                <>
+                  <header className="page-head">
+                    <h1>Insights</h1>
+                    <p>How the search is tracking against your 15 November offer date.</p>
+                  </header>
+                  <InsightsView jobs={jobs} events={events} counts={counts} funnel={funnel} />
+                </>
+              ) : (
+                <ActivityView events={events} openRole={openRole} />
+              )}
+            </div>
+          </ViewTransition>
         )}
       </main>
 
@@ -340,17 +392,22 @@ export default function Tracker({
           agentReady={agentReady}
           tailor={tailor}
           openResume={openResume}
-          onClose={() => setOpenId(null)}
+          closing={closing}
+          onClose={closeRole}
           onDeleted={(id) => {
-            setJobs((prev) => prev.filter((j) => j.id !== id));
-            setOpenId(null);
+            startTransition(() => setJobs((prev) => prev.filter((j) => j.id !== id)));
+            closeRole();
             showToast({ text: 'Role deleted' });
           }}
         />
       ) : null}
 
       {toast ? (
-        <div className={`toast${toast.error ? ' err' : ''}`} role="status">
+        <div
+          key={toast.id}
+          className={`toast${toast.error ? ' err' : ''}${toastLeaving ? ' leaving' : ''}`}
+          role="status"
+        >
           <span>{toast.text}</span>
           {toast.undo ? (
             <button className="ghost" onClick={toast.undo}>

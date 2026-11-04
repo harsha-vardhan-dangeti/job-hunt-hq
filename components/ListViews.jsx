@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, ViewTransition } from 'react';
 import {
   CLOSED,
   LABEL,
@@ -130,6 +130,8 @@ function cardHint(j) {
 export function PipelineView({ rows, openRole, act, readOnly }) {
   const [over, setOver] = useState(null);
   const [dragId, setDragId] = useState(null);
+  // The card just dropped: named so it glides from its old column to the new one.
+  const [moved, setMoved] = useState(null);
   const [shown, setShown] = useState(null);
   const count = (status) => rows.filter((j) => j.status === status).length;
   const active = shown || STAGES.find((s) => count(s) > 0) || STAGES[0];
@@ -139,7 +141,8 @@ export function PipelineView({ rows, openRole, act, readOnly }) {
     const j = rows.find((r) => r.id === dragId);
     setDragId(null);
     if (!j || j.status === status || readOnly) return;
-    act(j, { status }, `${j.company} moved to ${LABEL[status]}`);
+    setMoved(j.id);
+    act(j, { status }, `${j.company} moved to ${LABEL[status]}`).finally(() => setTimeout(() => setMoved(null), 400));
   }
 
   return (
@@ -188,27 +191,33 @@ export function PipelineView({ rows, openRole, act, readOnly }) {
                   items.map((j) => {
                     const hint = cardHint(j);
                     return (
-                      <button
+                      <ViewTransition
                         key={j.id}
-                        className={`jcard f${j.fit || 3}${hint.late ? ' due' : ''}${dragId === j.id ? ' dragging' : ''}`}
-                        draggable={!readOnly}
-                        onDragStart={(e) => {
-                          setDragId(j.id);
-                          e.dataTransfer.effectAllowed = 'move';
-                        }}
-                        onDragEnd={() => {
-                          setDragId(null);
-                          setOver(null);
-                        }}
-                        onClick={() => openRole(j.id)}
+                        name={moved === j.id ? 'card-moved' : undefined}
+                        share="card-move"
+                        default="none"
                       >
-                        <span className="co">{j.company}</span>
-                        <span className="role">{j.role || 'Role to pick'}</span>
-                        <span className="jcard-foot">
-                          <Fit n={j.fit} />
-                          <span className={`small${hint.late ? ' late' : ' muted'}`}>{hint.text}</span>
-                        </span>
-                      </button>
+                        <button
+                          className={`jcard f${j.fit || 3}${hint.late ? ' due' : ''}${dragId === j.id ? ' dragging' : ''}`}
+                          draggable={!readOnly}
+                          onDragStart={(e) => {
+                            setDragId(j.id);
+                            e.dataTransfer.effectAllowed = 'move';
+                          }}
+                          onDragEnd={() => {
+                            setDragId(null);
+                            setOver(null);
+                          }}
+                          onClick={() => openRole(j.id)}
+                        >
+                          <span className="co">{j.company}</span>
+                          <span className="role">{j.role || 'Role to pick'}</span>
+                          <span className="jcard-foot">
+                            <Fit n={j.fit} />
+                            <span className={`small${hint.late ? ' late' : ' muted'}`}>{hint.text}</span>
+                          </span>
+                        </button>
+                      </ViewTransition>
                     );
                   })
                 )}
