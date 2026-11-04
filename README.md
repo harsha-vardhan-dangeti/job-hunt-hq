@@ -124,7 +124,10 @@ move it, what it needs next, its full history, and every field.
 - **Brief** — the agent's morning brief on its own page, sized for reading: to-dos in order,
   inbox notes, the Naukri headline and market notes.
 - **Resumes** — a resume tailored to each fit-4+ role, built only from the master resume you
-  paste in once. The agent puts the matching experience first in the role's own words, lists what
+  upload once as a PDF (drop it on the card or use Upload PDF; Replace PDF when it changes). The
+  server reads the text out of the PDF, and that text is what the agent, the ATS score and the
+  fact check use; "Text the agent reads from it" shows it. A scanned PDF has no text to read and
+  is turned away. The agent puts the matching experience first in the role's own words, lists what
   the role asks for that you don't have as gaps (left out, never claimed), and the page flags any
   employer, title, skill or number that isn't in the master. Download PDF prints a clean,
   single-column page that applicant-tracking systems can read. **Edit in Overleaf** sends it to
@@ -157,8 +160,9 @@ session. Without either it returns 401.
 | `DELETE` | `/api/jobs/{id}` | remove a row |
 | `GET` | `/api/brief` | today's brief |
 | `PUT` | `/api/brief` | replace today's brief |
-| `GET` | `/api/resume` | the master resume, `{text, updatedOn}` |
-| `PUT` | `/api/resume` | replace the master resume |
+| `GET` | `/api/resume` | the master resume, `{text, fileName?, pages?, updatedOn}` |
+| `POST` | `/api/resume` | replace the master resume from a PDF, as multipart form field `file` (4 MB max) |
+| `PUT` | `/api/resume` | replace the master resume with text, `{text}` |
 | `POST` | `/api/ats` | score a resume for a role, `{jobId, resume?, jd?}`; saves nothing |
 | `GET` | `/api/agent/progress` | the last 10 agent runs, newest first, with their steps |
 | `POST` | `/api/agent/progress` | the agent reports a step: `{"kind"?, "step", "status", "detail"?}` (see below) |
@@ -256,7 +260,7 @@ app/
   api/jobs/route.js     list + create
   api/jobs/[id]/route.js  update + delete
   api/brief/route.js    read + replace the brief
-  api/resume/route.js   read + replace the master resume
+  api/resume/route.js   read the master resume; replace it from a PDF or text
   api/ats/route.js      ATS score for a draft or saved resume
   api/agent/run/route.js       start the agent, record the run
   api/agent/progress/route.js  the agent's step reports; the page polls it

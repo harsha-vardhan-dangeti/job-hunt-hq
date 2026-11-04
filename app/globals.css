@@ -844,7 +844,23 @@ span.agenda-main { cursor: default; }
 .row-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .master { gap: 12px; }
 .master-help { margin: 0; color: var(--muted); max-width: 80ch; }
-textarea.master-text { min-height: 420px; font-size: 14px; line-height: 1.6; }
+.master { transition: border-color 0.15s, background-color 0.15s; }
+.master.over { border-color: var(--accent); background: var(--accent-soft); }
+.master-read > summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var(--muted); }
+.master-read > summary:hover { color: var(--ink); }
+.master-read > p { margin: 8px 0; }
+.master-text {
+  margin: 0;
+  max-height: 420px;
+  overflow: auto;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-control);
+  background: var(--surface-2);
+  font: 13px/1.6 var(--body);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
 
 .resume-layout {
   display: grid;
@@ -1652,7 +1668,7 @@ table.mini th, table.mini td { padding: 4px 14px 4px 0; position: static; }
   .blist:not(.plain) .bitem:first-child p { font-size: 18px; }
   .blist:not(.plain) .bitem:first-child .bnum { font-size: 26px; }
   .resume-doc { padding: 24px 18px; }
-  textarea.master-text { min-height: 300px; }
+  .master-text { max-height: 300px; }
   /* Roles: each row becomes a card, company and stage on top, next step and fit below. */
   .roles-table thead { display: none; }
   .roles-table, .roles-table tbody { display: block; }

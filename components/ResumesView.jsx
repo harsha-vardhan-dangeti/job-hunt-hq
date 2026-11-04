@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { fmtDate } from './model';
 import { Fit } from './parts';
 import { ATS_TARGET } from './ats';
@@ -14,86 +14,99 @@ const STATE_TEXT = {
   none: 'Not tailored yet',
 };
 
-/** The master resume: pasted once, edited when something real changes. */
+/** The master resume: uploaded as a PDF, and uploaded again when something
+ *  real changes. The server reads the text out of it; that text is what the
+ *  agent, the ATS score and the fact check use. */
 function MasterCard({ master, setMaster, readOnly }) {
   const empty = !master.text?.trim();
-  const [editing, setEditing] = useState(empty);
-  const [text, setText] = useState(master.text || '');
+  const input = useRef(null);
+  const [over, setOver] = useState(false);
   const [state, setState] = useState({ busy: false, msg: '', error: false });
   const words = (master.text || '').split(/\s+/).filter(Boolean).length;
 
-  async function save() {
+  async function upload(file) {
+    if (!file || readOnly || state.busy) return;
     setState({ busy: true, msg: '', error: false });
     try {
-      const res = await fetch('/api/resume', {
-        method: 'PUT',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ text }),
-      });
+      const form = new FormData();
+      form.append('file', file);
+      const res = await fetch('/api/resume', { method: 'POST', body: form });
       const body = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(body.error || `Save failed (${res.status})`);
+      if (!res.ok) throw new Error(body.error || `Upload failed (${res.status})`);
       setMaster(body.resume);
-      setEditing(false);
-      setState({ busy: false, msg: 'Master resume saved', error: false });
+      setState({ busy: false, msg: 'Master resume updated', error: false });
     } catch (e) {
       setState({ busy: false, msg: e.message, error: true });
     }
   }
 
+  function onDrop(e) {
+    e.preventDefault();
+    setOver(false);
+    upload(e.dataTransfer.files?.[0]);
+  }
+
+  const source = [master.fileName, master.pages ? `${master.pages} page${master.pages > 1 ? 's' : ''}` : '', `${words} words`]
+    .filter(Boolean)
+    .join(', ');
+
   return (
-    <section className="card master" aria-labelledby="master-h">
+    <section
+      className={`card master${over ? ' over' : ''}`}
+      aria-labelledby="master-h"
+      onDragOver={(e) => {
+        if (readOnly) return;
+        e.preventDefault();
+        setOver(true);
+      }}
+      onDragLeave={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget)) setOver(false);
+      }}
+      onDrop={onDrop}
+    >
       <div className="card-head">
         <div>
           <h2 id="master-h">Master resume</h2>
           <p className="muted small">
             {empty
               ? 'Not added yet.'
-              : `Updated ${fmtDate(master.updatedOn)}, ${words} words. The only source of facts for every tailored resume.`}
+              : `Updated ${fmtDate(master.updatedOn)}: ${source}. The only source of facts for every tailored resume.`}
           </p>
         </div>
-        {!editing ? (
-          <button className="ghost" onClick={() => setEditing(true)} disabled={readOnly}>
-            Edit master resume
-          </button>
-        ) : null}
-      </div>
-      {editing ? (
-        <>
-          <p className="master-help">
-            Paste your full, current resume as text: every job, project, number, tool and certificate you can back up in
-            an interview. The agent tailors each resume from this alone. It can reorder, choose and reword what&apos;s
-            here, but never add an employer, title, date, figure or skill that isn&apos;t.
-          </p>
-          <textarea
-            className="master-text"
-            aria-label="Master resume"
-            placeholder={
-              'Your name\nemail · phone · city · LinkedIn\n\nSUMMARY\n…\n\nEXPERIENCE\nSoftware Engineer, Qualcomm, Hyderabad | 2022 – present\n- …'
-            }
-            value={text}
-            onChange={(e) => setText(e.target.value)}
+        <div className="row-actions">
+          <input
+            ref={input}
+            type="file"
+            accept="application/pdf,.pdf"
+            hidden
+            onChange={(e) => {
+              upload(e.target.files?.[0]);
+              e.target.value = '';
+            }}
           />
-          <div className="row-actions">
-            <button className="primary" onClick={save} disabled={readOnly || state.busy || !text.trim()}>
-              {state.busy ? 'Saving…' : 'Save master resume'}
-            </button>
-            {!empty ? (
-              <button
-                className="ghost"
-                onClick={() => {
-                  setText(master.text || '');
-                  setEditing(false);
-                }}
-              >
-                Cancel
-              </button>
-            ) : null}
-            {state.msg ? <span className={`saved${state.error ? ' err' : ''}`}>{state.msg}</span> : null}
-          </div>
-        </>
-      ) : state.msg ? (
-        <span className="saved">{state.msg}</span>
-      ) : null}
+          <button
+            className={empty ? 'primary' : 'ghost'}
+            onClick={() => input.current?.click()}
+            disabled={readOnly || state.busy}
+          >
+            {state.busy ? 'Reading PDF…' : empty ? 'Upload PDF' : 'Replace PDF'}
+          </button>
+        </div>
+      </div>
+      {empty ? (
+        <p className="master-help">
+          Upload your full, current resume as a PDF, or drop it here: every job, project, number, tool and certificate
+          you can back up in an interview. The agent tailors each resume from it alone. It can reorder, choose and
+          reword what&apos;s there, but never add an employer, title, date, figure or skill that isn&apos;t.
+        </p>
+      ) : (
+        <details className="master-read">
+          <summary>Text the agent reads from it</summary>
+          <p className="muted small">If something here reads wrong, fix it in your resume and upload the PDF again.</p>
+          <pre className="master-text">{master.text}</pre>
+        </details>
+      )}
+      {state.msg ? <span className={`saved${state.error ? ' err' : ''}`}>{state.msg}</span> : null}
     </section>
   );
 }
@@ -309,7 +322,7 @@ function AtsBlock({ s, base }) {
         <>
           <p className="small">
             <b>The role asks for these and your master doesn&apos;t mention them.</b>{' '}
-            {meets ? '' : `They're why this is under ${ATS_TARGET}. `}If one is true, add it to your master resume, then
+            {meets ? '' : `They're why this is under ${ATS_TARGET}. `}If one is true, add it to your resume, upload the PDF again, then
             tailor again.
           </p>
           <Chips items={needsMaster} kind="warn" points />
@@ -384,7 +397,7 @@ function Viewer({ j, master, tailor, openRole, readOnly, agentReady }) {
       onClick={() => tailor(j)}
       disabled={!canTailor}
       title={
-        !master.text?.trim() ? 'Add your master resume first' : !agentReady ? 'Connect the agent first' : undefined
+        !master.text?.trim() ? 'Upload your master resume first' : !agentReady ? 'Connect the agent first' : undefined
       }
     >
       {st === 'requested' ? 'Being written…' : r ? 'Tailor again' : 'Tailor resume'}
@@ -455,7 +468,7 @@ function Viewer({ j, master, tailor, openRole, readOnly, agentReady }) {
             {!master.text?.trim() ? (
               <div className="rail-block check warn">
                 <h3>Can&apos;t check facts yet</h3>
-                <p className="small">Add your master resume above, and every item here is checked against it.</p>
+                <p className="small">Upload your master resume above, and every item here is checked against it.</p>
               </div>
             ) : (
               <div className={`rail-block check ${unverified.length ? 'warn' : 'ok'}`}>
@@ -532,7 +545,7 @@ function Viewer({ j, master, tailor, openRole, readOnly, agentReady }) {
           <p className="muted">
             {master.text?.trim()
               ? 'Tailor resume asks the agent to write one for this role. It takes a few minutes.'
-              : 'Add your master resume above first. Every tailored resume is built from it.'}
+              : 'Upload your master resume above first. Every tailored resume is built from it.'}
           </p>
           {ats.master ? (
             <p>

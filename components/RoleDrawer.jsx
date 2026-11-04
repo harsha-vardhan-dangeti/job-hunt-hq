@@ -153,7 +153,7 @@ function ResumeLine({ j, master, agentReady, readOnly, tailor, openResume }) {
   let text;
   if (st === 'requested') text = 'The agent is tailoring a resume for this role.';
   else if (st === 'stalled') text = "The last tailoring request didn't finish.";
-  else if (!r) text = noMaster ? 'Add your master resume to tailor one for this role.' : 'No tailored resume yet.';
+  else if (!r) text = noMaster ? 'Upload your master resume to tailor one for this role.' : 'No tailored resume yet.';
   else
     text = `Tailored ${fmtDate(r.generatedOn)}: ${(r.match?.covered || []).length} of the role's asks matched, ${
       (r.match?.gaps || []).length
