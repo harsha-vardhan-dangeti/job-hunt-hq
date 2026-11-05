@@ -25,6 +25,7 @@ const SECTIONS = [
     [
       ['company', 'Company', 'text'],
       ['role', 'Role', 'text'],
+      ['location', 'City (Hyderabad, Bengaluru, Pune or Remote)', 'text'],
       ['jobId', 'Job or requisition ID', 'text'],
       ['url', 'Job posting link', 'url'],
       ['source', 'Where you found it', 'text'],

@@ -208,7 +208,7 @@ function BriefTeaser({ brief, openBrief }) {
             ? `Written ${fmtDate(brief.date)}${fresh ? '' : ', not refreshed today'}${
                 counts.length ? `, with ${counts.join(' and ')}` : ''
               }.`
-            : 'No brief yet. The agent writes one at 8:30 every weekday.'}
+            : 'No brief yet. The agent writes one at 8 every morning.'}
         </p>
       </div>
       {brief.todo?.[0] ? <p className="teaser-line">{brief.todo[0]}</p> : null}

@@ -141,6 +141,13 @@ move it, what it needs next, its full history, and every field.
   keywords to add to the master, if they're true. The agent saves each role's job description
   as it adds the role, fills in missing ones each morning, and **Fetch missing job descriptions**
   asks for them right away. A description you paste into a role is never replaced.
+- **Roles and Pipeline filters** — besides search, fit and stage: **source** (Naukri, LinkedIn,
+  Indeed, careers site, recruiter or referral, target list, read from the first word of a row's
+  `source`), **city** (Hyderabad, Bengaluru, Pune, Remote, from the row's `location`, or the
+  cities its title, source and notes name until the agent fills that in), **Top companies**
+  (`TOP_COMPANIES` in `components/model.js`) and **My target roles** (backend, AI, forward
+  deployed and applied AI titles). The morning agent reads Naukri and LinkedIn job-alert emails,
+  searches all three cities and the same top companies, and sets `location` on each row.
 - **Insights** — sent this week against the 12-a-week target, your daily streak, a 14-day chart of
   messages sent and applications, and the funnel with its weakest step called out.
 
@@ -218,7 +225,7 @@ Ask Claude to do it and hand over the URL and token.
 ### Run the agent from the site
 
 The **Run agent now** button on the brief card starts the morning routine immediately through
-its API trigger, instead of waiting for the 8:30 weekday run. To connect it:
+its API trigger, instead of waiting for the 8:00 daily run. To connect it:
 
 1. claude.ai/code/routines → the routine → **Edit** → **Trigger** row → **+** → **API**.
    Copy the routine id from the Fire URL (`trig_…`), then **Generate token** and copy it

@@ -20,6 +20,7 @@ export const OFFER_BY = '2026-11-15';
 export const FIELDS = [
   ['company', 'Company', 'text'],
   ['role', 'Role', 'text'],
+  ['location', 'City', 'text'],
   ['jobId', 'Job / req ID', 'text'],
   ['status', 'Status', 'status'],
   ['fit', 'Fit (1–5)', 'number'],
@@ -211,6 +212,53 @@ export function sourceName(j) {
   const s = String(j.source || '').split(/ · |;|,/)[0].trim();
   return s || 'Not recorded';
 }
+
+/** Where a role came from, grouped the way you search for them. "Gmail · Naukri
+ *  recruiter invite" counts as Naukri; "careers.apple.com" is a careers site. */
+export const CHANNELS = ['Naukri', 'LinkedIn', 'Indeed', 'Careers site', 'Recruiter or referral', 'Target list'];
+export function sourceChannel(j) {
+  const s = String(j.source || '').toLowerCase();
+  if (s.includes('naukri')) return 'Naukri';
+  if (s.includes('linkedin')) return 'LinkedIn';
+  if (s.includes('indeed')) return 'Indeed';
+  if (s.startsWith('target list')) return 'Target list';
+  if (/gmail|recruiter|referral|agency|mail/.test(s)) return 'Recruiter or referral';
+  if (/careers|jobs\.|\.com|workday|lever|greenhouse/.test(s)) return 'Careers site';
+  return 'Other';
+}
+
+export const CITIES = ['Hyderabad', 'Bengaluru', 'Pune', 'Remote'];
+const CITY_RE = {
+  Hyderabad: /hyderabad|gachibowli|hitec city/i,
+  Bengaluru: /bengaluru|bangalore/i,
+  Pune: /\bpune\b/i,
+  Remote: /\bremote\b/i,
+};
+/** The cities a role is in: its location if the agent or you set one, else
+ *  the cities its title, source and notes name. */
+export function citiesOf(j) {
+  const text = j.location?.trim() ? j.location : `${j.role} ${j.source} ${j.notes}`;
+  return CITIES.filter((c) => CITY_RE[c].test(text || ''));
+}
+
+/* Product, platform and finance-tech employers with large engineering centres
+   in Hyderabad, Bengaluru or Pune. The agent's prompt searches the same names. */
+export const TOP_COMPANIES = [
+  'Google', 'Microsoft', 'Apple', 'Amazon', 'Meta', 'Salesforce', 'ServiceNow', 'Uber', 'JPMorgan',
+  'Goldman Sachs', 'Morgan Stanley', 'Atlassian', 'Autodesk', 'Intuit', 'Visa', 'Mastercard',
+  'American Express', 'PayPal', 'Adobe', 'Cisco', 'Walmart', 'Twilio', 'Freshworks', 'Databricks',
+  'Darwinbox', 'Swiggy', 'Flipkart', 'PhonePe', 'Razorpay', 'Meesho', 'CRED', 'Nutanix', 'Zscaler',
+  'Palo Alto Networks', 'SAP', 'Workday', 'LinkedIn', 'Oracle', 'Nvidia', 'Micron', 'Arcesium',
+  'D. E. Shaw', 'Wells Fargo', 'UBS', 'Barclays', 'Deutsche Bank', 'Thoughtworks',
+];
+const TOP_RE = new RegExp(`^(${TOP_COMPANIES.map((c) => c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})\\b`, 'i');
+export const isTopCompany = (j) => TOP_RE.test(String(j.company || '').trim());
+
+/* The roles you're after: backend and AI engineering, forward deployed and
+   applied AI. Matched on the title. */
+const TARGET_RE =
+  /\b(ai|ml|genai|gen ai|generative|llm|rag|agents?|agentic|agentforce|artificial intelligence|forward deploy(ed|ment)|fde|applied|machine learning|solutions engineer|backend|back-end|python|full stack)\b/i;
+export const isTargetRole = (j) => TARGET_RE.test(String(j.role || ''));
 
 export const ADVANCED = new Set(['outreach', 'applied', 'interviewing', 'offer', 'rejected']);
 export const wasContacted = (j) => Boolean(j.messagedOn) || ADVANCED.has(j.status);

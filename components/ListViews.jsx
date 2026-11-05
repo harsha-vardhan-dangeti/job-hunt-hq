@@ -1,22 +1,37 @@
 import { useState, ViewTransition } from 'react';
 import {
+  CHANNELS,
+  CITIES,
   CLOSED,
   LABEL,
   STAGES,
   STATUSES,
+  citiesOf,
   daysAgo,
   deadlinePassed,
   dueReason,
   fmtDate,
   isStale,
+  isTargetRole,
+  isTopCompany,
   nextStepText,
+  sourceChannel,
   sourceName,
 } from './model';
 import { Fit } from './parts';
 
-export const DEFAULT_FILTERS = { filter: 'open', query: '', minFit: 0, sort: 'priority' };
+export const DEFAULT_FILTERS = {
+  filter: 'open',
+  query: '',
+  minFit: 0,
+  sort: 'priority',
+  source: '',
+  city: '',
+  top: false,
+  target: false,
+};
 
-export function applyFilters(jobs, { filter, query, minFit, sort }) {
+export function applyFilters(jobs, { filter, query, minFit, sort, source, city, top, target }) {
   const q = query.trim().toLowerCase();
   let list = jobs.filter((j) => {
     if (filter === 'due' && !dueReason(j)) return false;
@@ -24,8 +39,12 @@ export function applyFilters(jobs, { filter, query, minFit, sort }) {
     if (filter === 'open' && CLOSED.has(j.status)) return false;
     if (!['all', 'due', 'stale', 'open'].includes(filter) && j.status !== filter) return false;
     if (minFit && (j.fit || 0) < minFit) return false;
+    if (source && sourceChannel(j) !== source) return false;
+    if (city && !citiesOf(j).includes(city)) return false;
+    if (top && !isTopCompany(j)) return false;
+    if (target && !isTargetRole(j)) return false;
     if (q) {
-      const hay = `${j.company} ${j.role} ${j.contact} ${j.source} ${j.jobId} ${j.notes}`.toLowerCase();
+      const hay = `${j.company} ${j.role} ${j.location} ${j.contact} ${j.source} ${j.jobId} ${j.notes}`.toLowerCase();
       if (!hay.includes(q)) return false;
     }
     return true;
@@ -52,12 +71,17 @@ export function countBy(jobs) {
     stale: jobs.filter(isStale).length,
   };
   for (const [k] of STATUSES) c[k] = jobs.filter((j) => j.status === k).length;
+  c.source = Object.fromEntries(CHANNELS.map((k) => [k, jobs.filter((j) => sourceChannel(j) === k).length]));
+  c.city = Object.fromEntries(CITIES.map((k) => [k, jobs.filter((j) => citiesOf(j).includes(k)).length]));
+  c.top = jobs.filter(isTopCompany).length;
+  c.target = jobs.filter(isTargetRole).length;
   return c;
 }
 
 /** Search, fit, sort and the quick filters, shared by Pipeline and Roles. */
 export function Filters({ filters, setFilters, counts, searchRef, showPills = true, onAdd, readOnly }) {
   const set = (k, v) => setFilters((f) => ({ ...f, [k]: v }));
+  const narrowed = Boolean(filters.source || filters.city || filters.top || filters.target);
   const pills = [
     ['open', 'Open'],
     ['due', 'Needs action'],
@@ -94,6 +118,48 @@ export function Filters({ filters, setFilters, counts, searchRef, showPills = tr
         <button className="primary" onClick={onAdd} disabled={readOnly}>
           Add a role
         </button>
+      </div>
+      <div className="narrow" role="group" aria-label="Narrow by source, city and company">
+        <select aria-label="Source" value={filters.source} onChange={(e) => set('source', e.target.value)}>
+          <option value="">Every source</option>
+          {CHANNELS.map((k) => (
+            <option key={k} value={k}>
+              {k} ({counts.source[k]})
+            </option>
+          ))}
+        </select>
+        <select aria-label="City" value={filters.city} onChange={(e) => set('city', e.target.value)}>
+          <option value="">Every city</option>
+          {CITIES.map((k) => (
+            <option key={k} value={k}>
+              {k} ({counts.city[k]})
+            </option>
+          ))}
+        </select>
+        <button
+          className="toggle"
+          aria-pressed={filters.top}
+          onClick={() => set('top', !filters.top)}
+          title="Large product, platform and finance-tech employers with engineering centres in Hyderabad, Bengaluru or Pune"
+        >
+          Top companies <span>{counts.top}</span>
+        </button>
+        <button
+          className="toggle"
+          aria-pressed={filters.target}
+          onClick={() => set('target', !filters.target)}
+          title="Backend and AI engineering, forward deployed and applied AI titles"
+        >
+          My target roles <span>{counts.target}</span>
+        </button>
+        {narrowed ? (
+          <button
+            className="linklike"
+            onClick={() => setFilters((f) => ({ ...f, source: '', city: '', top: false, target: false }))}
+          >
+            Clear
+          </button>
+        ) : null}
       </div>
       {showPills ? (
         <div className="stats" role="group" aria-label="Show">
@@ -248,7 +314,9 @@ export function RolesView({ rows, total, openRole }) {
           {rows.length === 0 ? (
             <tr>
               <td colSpan={6} className="empty">
-                {total ? 'No roles match. Clear the search or pick another filter.' : 'No roles yet. Add one to start tracking.'}
+                {total
+                  ? 'No roles match. Clear the search, or the source, city and company filters.'
+                  : 'No roles yet. Add one to start tracking.'}
               </td>
             </tr>
           ) : (
@@ -270,6 +338,7 @@ export function RolesView({ rows, total, openRole }) {
                   <td>
                     <div className="co">{j.company}</div>
                     <div className="role">{j.role || 'Role to pick'}</div>
+                    {citiesOf(j).length ? <div className="where">{citiesOf(j).join(', ')}</div> : null}
                   </td>
                   <td>
                     <span className={`chip s-${j.status}`}>{LABEL[j.status] || j.status}</span>

@@ -63,7 +63,7 @@ export default function BriefView({ brief, agentReady, runs = [] }) {
                 ))}
               </ol>
             ) : (
-              <p className="muted">Nothing yet. The agent writes this at 8:30 every weekday.</p>
+              <p className="muted">Nothing yet. The agent writes this at 8 every morning.</p>
             )}
           </section>
 

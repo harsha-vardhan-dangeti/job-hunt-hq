@@ -389,6 +389,27 @@ button.danger:hover:not(:disabled) {
 .stat b { font: 600 14px var(--display); }
 .stat[aria-pressed='true'] { border-color: var(--accent); background: var(--accent-soft); }
 .stat.alert b { color: var(--bad); }
+.narrow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-control);
+  background: var(--surface);
+  color: inherit;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+.toggle:hover { background: var(--surface-2); }
+.toggle span { color: var(--muted); font-variant-numeric: tabular-nums; }
+.toggle[aria-pressed='true'] { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+.toggle[aria-pressed='true'] span { color: inherit; }
+.where { margin-top: 2px; font-size: 12px; color: var(--muted); }
 
 /* ---------- shared bits ---------- */
 
@@ -1490,7 +1511,7 @@ table.mini th, table.mini td { padding: 4px 14px 4px 0; position: static; }
 @media (pointer: coarse) {
   input, select, textarea { font-size: 16px; }
   input:not([type='checkbox']):not([type='radio']), select { min-height: 44px; }
-  button.primary, button.ghost, .stat { min-height: 44px; }
+  button.primary, button.ghost, .stat, .toggle { min-height: 44px; }
   .stat { align-items: center; }
   .icon-btn { width: 44px; height: 44px; }
   .side-nav a { min-height: 44px; }
